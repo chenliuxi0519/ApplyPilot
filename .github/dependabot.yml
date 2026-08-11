@@ -8,7 +8,7 @@ updates:
     cooldown:
       default-days: 7
     commit-message:
-      prefix: ⬆
+      prefix: "依赖"
     labels:
       - "internal"
       - "dependencies"
@@ -17,7 +17,7 @@ updates:
       github-actions:
         patterns:
           - "*"
-  # Python uv
+  # Python 依赖
   - package-ecosystem: uv
     directory: /
     schedule:
@@ -25,13 +25,13 @@ updates:
     cooldown:
       default-days: 7
     commit-message:
-      prefix: ⬆
+      prefix: "依赖"
     labels: [dependencies, internal]
     groups:
       python-packages:
         patterns:
           - "*"
-  # bun
+  # 前端依赖
   - package-ecosystem: bun
     directory: /
     schedule:
@@ -39,7 +39,7 @@ updates:
     cooldown:
       default-days: 7
     commit-message:
-      prefix: ⬆
+      prefix: "依赖"
     labels: [dependencies, internal]
     ignore:
       - dependency-name: "@hey-api/openapi-ts"
@@ -47,7 +47,7 @@ updates:
       npm-packages:
         patterns:
           - "*"
-  # Docker
+  # Docker 镜像
   - package-ecosystem: docker
     directories:
       - /backend
@@ -57,12 +57,12 @@ updates:
     cooldown:
       default-days: 7
     commit-message:
-      prefix: ⬆
+      prefix: "依赖"
     groups:
       docker:
         patterns:
           - "*"
-  # Docker Compose
+  # Docker Compose 镜像
   - package-ecosystem: docker-compose
     directory: /
     schedule:
@@ -70,7 +70,7 @@ updates:
     cooldown:
       default-days: 7
     commit-message:
-      prefix: ⬆
+      prefix: "依赖"
     groups:
       docker-compose:
         patterns:

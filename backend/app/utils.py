@@ -25,7 +25,7 @@ class EmailData:
 def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
     template_str = (
         Path(__file__).parent / "email-templates" / "build" / template_name
-    ).read_text()
+    ).read_text(encoding="utf-8")
     html_content = Template(template_str).render(context)
     return html_content
 
@@ -36,8 +36,8 @@ def send_email(
     subject: str = "",
     html_content: str = "",
 ) -> None:
-    assert settings.emails_enabled, "no provided configuration for email variables"
-    assert settings.EMAILS_FROM_EMAIL  # For type checker
+    assert settings.emails_enabled, "邮件服务尚未配置"
+    assert settings.EMAILS_FROM_EMAIL
     message = emails.message.Message(
         subject=subject,
         html=html_content,
@@ -58,7 +58,7 @@ def send_email(
 
 def generate_test_email(email_to: str) -> EmailData:
     project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - Test email"
+    subject = f"{project_name} - 测试邮件"
     html_content = render_email_template(
         template_name="test_email.html",
         context={"project_name": settings.PROJECT_NAME, "email": email_to},
@@ -68,7 +68,7 @@ def generate_test_email(email_to: str) -> EmailData:
 
 def generate_reset_password_email(email_to: str, email: str, token: str) -> EmailData:
     project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - Password recovery for user {email}"
+    subject = f"{project_name} - 重置密码"
     link = f"{settings.FRONTEND_HOST}/reset-password?token={token}"
     html_content = render_email_template(
         template_name="reset_password.html",
@@ -87,7 +87,7 @@ def generate_new_account_email(
     email_to: str, username: str, password: str
 ) -> EmailData:
     project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - New account for user {username}"
+    subject = f"{project_name} - 新账号"
     html_content = render_email_template(
         template_name="new_account.html",
         context={

@@ -12,7 +12,7 @@ const ErrorComponent = () => {
           <span className="text-6xl md:text-8xl font-bold leading-none mb-4">
             Error
           </span>
-          <span className="text-2xl font-bold mb-2">Oops!</span>
+          <span className="text-2xl font-bold mb-2">出错了</span>
         </div>
       </div>
 
@@ -20,7 +20,7 @@ const ErrorComponent = () => {
         Something went wrong. Please try again.
       </p>
       <Link to="/">
-        <Button>Go Home</Button>
+        <Button>返回首页</Button>
       </Link>
     </div>
   )

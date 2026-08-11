@@ -16,34 +16,28 @@ ARG VITE_API_URL=
 RUN bun run build
 
 
-FROM python:3.14
+FROM python:3.12
 
 ENV PYTHONUNBUFFERED=1
 
-# Install uv
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+# 从官方镜像复制 uv，避免在构建时执行安装脚本。
 COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
-# Compile bytecode
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+# 安装依赖时预编译字节码，并用复制方式处理缓存文件。
 ENV UV_COMPILE_BYTECODE=1
 
-# uv Cache
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
 ENV UV_LINK_MODE=copy
 
 WORKDIR /app/
 
-# Place executables in the environment at the front of the path
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
+# 优先使用项目虚拟环境中的命令。
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Install dependencies
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+# 先安装锁定依赖，提高业务代码变更后的构建复用率。
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-workspace --package app
+    uv sync --frozen --no-install-workspace --package applypilot-backend
 
 COPY ./backend/scripts /app/backend/scripts
 
@@ -53,12 +47,11 @@ COPY ./backend/app /app/backend/app
 
 COPY --from=frontend-build /app/backend/app/frontend /app/backend/app/frontend
 
-# Sync the project
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+# 复制业务代码后安装 ApplyPilot 后端包。
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --package app
+    uv sync --frozen --package applypilot-backend
 
 WORKDIR /app/backend/
 

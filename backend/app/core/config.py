@@ -24,14 +24,13 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/)
         env_file="../.env",
         env_ignore_empty=True,
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
@@ -49,6 +48,22 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
+
+    AGENT_BASE_URL: str | None = None
+    AGENT_API_KEY: str | None = None
+    AGENT_MODEL: str = "deepseek-v4-flash"
+
+    def missing_agent_settings(self) -> tuple[str, ...]:
+        return tuple(
+            name
+            for name in ("AGENT_BASE_URL", "AGENT_API_KEY", "AGENT_MODEL")
+            if not getattr(self, name)
+        )
+
+    @property
+    def agent_is_configured(self) -> bool:
+        return not self.missing_agent_settings()
+
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str
@@ -95,10 +110,7 @@ class Settings(BaseSettings):
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
-            message = (
-                f'The value of {var_name} is "changethis", '
-                "for security, please change it, at least for deployments."
-            )
+            message = f'{var_name} 仍使用默认值 "changethis"，请在部署前更换。'
             if self.ENVIRONMENT == "local":
                 warnings.warn(message, stacklevel=1)
             else:

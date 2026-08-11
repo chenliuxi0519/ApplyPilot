@@ -53,7 +53,6 @@ export function findLastEmail({
       if (emailData) {
         return emailData
       }
-      // Wait for 100ms before checking again
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
   }

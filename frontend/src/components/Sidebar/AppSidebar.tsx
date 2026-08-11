@@ -1,4 +1,12 @@
-import { Briefcase, Home, Users } from "lucide-react"
+import {
+  Columns3,
+  FileCheck2,
+  GraduationCap,
+  Home,
+  MessagesSquare,
+  UserRound,
+  Users,
+} from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -9,30 +17,34 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
-import { type Item, Main } from "./Main"
+import { Main, type NavItem } from "./Main"
 import { User } from "./User"
 
-const baseItems: Item[] = [
-  { icon: Home, title: "Dashboard", path: "/" },
-  { icon: Briefcase, title: "Items", path: "/items" },
+const baseItems: NavItem[] = [
+  { icon: Home, title: "首页", path: "/" },
+  { icon: MessagesSquare, title: "智能助手", path: "/agent" },
+  { icon: UserRound, title: "个人档案", path: "/profile" },
+  { icon: GraduationCap, title: "项目对比", path: "/programs" },
+  { icon: FileCheck2, title: "证据库", path: "/evidence" },
+  { icon: Columns3, title: "申请看板", path: "/applications" },
 ]
 
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
 
   const items = currentUser?.is_superuser
-    ? [...baseItems, { icon: Users, title: "Admin", path: "/admin" }]
+    ? [...baseItems, { icon: Users, title: "用户管理", path: "/admin" }]
     : baseItems
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="px-4 py-6 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
+    <Sidebar collapsible="icon" className="border-r border-[var(--border)]">
+      <SidebarHeader className="h-16 justify-center border-b border-[var(--border-subtle)] px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
         <Logo variant="responsive" />
       </SidebarHeader>
       <SidebarContent>
         <Main items={items} />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="gap-2 border-t border-[var(--border-subtle)] p-3">
         <SidebarAppearance />
         <User user={currentUser} />
       </SidebarFooter>

@@ -14,16 +14,13 @@ router = APIRouter(prefix="/utils", tags=["utils"])
     status_code=201,
 )
 def test_email(email_to: EmailStr) -> Message:
-    """
-    Test emails.
-    """
     email_data = generate_test_email(email_to=email_to)
     send_email(
         email_to=email_to,
         subject=email_data.subject,
         html_content=email_data.html_content,
     )
-    return Message(message="Test email sent")
+    return Message(message="测试邮件已发送")
 
 
 @router.get("/health-check/")

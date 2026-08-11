@@ -147,7 +147,7 @@ def test_create_user_existing_username(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     username = random_email()
-    # username = email
+
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     crud.create_user(session=db, user_create=user_in)
@@ -194,8 +194,8 @@ def test_retrieve_users(
 
     assert len(all_users["data"]) > 1
     assert "count" in all_users
-    for item in all_users["data"]:
-        assert "email" in item
+    for user in all_users["data"]:
+        assert "email" in user
 
 
 def test_update_user_me(
@@ -245,7 +245,6 @@ def test_update_password_me(
     verified, _ = verify_password(new_password, user_db.hashed_password)
     assert verified
 
-    # Revert to the old password to keep consistency in test
     old_data = {
         "current_password": new_password,
         "new_password": settings.FIRST_SUPERUSER_PASSWORD,

@@ -63,10 +63,12 @@ export function ThemeProvider({
         : "light"
 
       root.classList.add(systemTheme)
+      root.dataset.theme = systemTheme
       return
     }
 
     root.classList.add(newTheme)
+    root.dataset.theme = newTheme
   }, [])
 
   useEffect(() => {
@@ -109,7 +111,7 @@ export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
 
   if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
+    throw new Error("useTheme 必须在 ThemeProvider 中使用")
 
   return context
 }

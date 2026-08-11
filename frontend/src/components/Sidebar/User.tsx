@@ -27,14 +27,14 @@ interface UserInfoProps {
 function UserInfo({ fullName, email }: UserInfoProps) {
   return (
     <div className="flex items-center gap-2.5 w-full min-w-0">
-      <Avatar className="size-8">
-        <AvatarFallback className="bg-zinc-600 text-white">
-          {getInitials(fullName || "User")}
+      <Avatar className="size-[30px]">
+        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+          {getInitials(fullName || "用户")}
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col items-start min-w-0">
-        <p className="text-sm font-medium truncate w-full">{fullName}</p>
-        <p className="text-xs text-muted-foreground truncate w-full">{email}</p>
+        <p className="w-full truncate text-xs font-medium text-[var(--text-secondary)]">{email}</p>
+        <p className="w-full truncate font-mono text-[11px] text-[var(--text-muted)]">{fullName || "申请者"}</p>
       </div>
     </div>
   )
@@ -82,12 +82,12 @@ export function User({ user }: { user: any }) {
             <RouterLink to="/settings" onClick={handleMenuClick}>
               <DropdownMenuItem>
                 <Settings />
-                User Settings
+                账户设置
               </DropdownMenuItem>
             </RouterLink>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
-              Log Out
+              退出登录
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

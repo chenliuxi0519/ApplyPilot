@@ -9,7 +9,7 @@ from app.core.db import engine
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-max_tries = 60 * 5  # 5 minutes
+max_tries = 60 * 5
 wait_seconds = 1
 
 
@@ -21,7 +21,6 @@ wait_seconds = 1
 )
 def init(db_engine: Engine) -> None:
     try:
-        # Try to create session to check if DB is awake
         with Session(db_engine) as session:
             session.exec(select(1))
     except Exception as e:
@@ -30,9 +29,9 @@ def init(db_engine: Engine) -> None:
 
 
 def main() -> None:
-    logger.info("Initializing service")
+    logger.info("正在等待测试数据库")
     init(engine)
-    logger.info("Service finished initializing")
+    logger.info("测试数据库已就绪")
 
 
 if __name__ == "__main__":
