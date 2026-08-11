@@ -106,7 +106,10 @@ OFFICIAL_SOURCES: dict[tuple[str, str], tuple[OfficialSource, ...]] = {
 # 已知无法按需读取的项目，记录原因，避免反复尝试。
 UNAVAILABLE_REASONS: dict[tuple[str, str], str] = {
     ("UCL", "MSc Machine Learning"): "UCL 官网拒绝程序访问（HTTP 403）",
-    ("UCL", "MSc Data Science and Machine Learning"): "UCL 官网拒绝程序访问（HTTP 403）",
+    (
+        "UCL",
+        "MSc Data Science and Machine Learning",
+    ): "UCL 官网拒绝程序访问（HTTP 403）",
     ("UCL", "MSc Computer Science"): "UCL 官网拒绝程序访问（HTTP 403）",
 }
 
@@ -117,7 +120,5 @@ def sources_for_program(
     return OFFICIAL_SOURCES.get((university_short_name, program_name), ())
 
 
-def unavailable_reason(
-    *, university_short_name: str, program_name: str
-) -> str | None:
+def unavailable_reason(*, university_short_name: str, program_name: str) -> str | None:
     return UNAVAILABLE_REASONS.get((university_short_name, program_name))

@@ -5,7 +5,7 @@
 """
 
 from app.research.extractor import ExtractedRequirement, extract_requirements
-from app.research.fetcher import FetchError, FetchedPage, fetch_official_page
+from app.research.fetcher import FetchedPage, FetchError, fetch_official_page
 from app.research.sources import OfficialSource, sources_for_program
 
 __all__ = [
