@@ -1,0 +1,22 @@
+.vscode/*
+!.vscode/extensions.json
+node_modules/
+frontend/.tanstack/
+frontend/.tanstack/
+backend/app/frontend/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.claude/settings.local.json
+
+# `.env` 可能包含数据库密码和模型密钥，只提交 `.env.example`。
+.env
+.env.*
+!.env.example

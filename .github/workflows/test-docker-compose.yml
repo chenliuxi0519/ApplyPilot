@@ -1,0 +1,29 @@
+name: Docker 构建测试
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+
+  test-docker-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker compose build
+      - run: docker compose down -v --remove-orphans
+      - run: docker compose up -d --wait backend adminer
+      - name: 检查后端健康状态
+        run: curl http://localhost:8000/api/v1/utils/health-check
+      - name: 检查前端页面
+        run: curl http://localhost:8000
+      - run: docker compose down -v --remove-orphans

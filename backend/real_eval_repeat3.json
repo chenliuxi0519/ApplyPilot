@@ -1,0 +1,1070 @@
+{
+  "mode": "real",
+  "cases": [
+    {
+      "id": "profile_read_001",
+      "category": "profile",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "get_user_profile"
+      ],
+      "succeeded_tools": [
+        "get_user_profile"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "profile_ielts_005",
+      "category": "profile",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_user_profile",
+        "update_user_profile"
+      ],
+      "succeeded_tools": [
+        "update_user_profile"
+      ],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 30,
+      "crash": null
+    },
+    {
+      "id": "search_singapore_ai_001",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "search_programs",
+        "get_user_profile",
+        "search_programs",
+        "search_programs"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 4,
+      "tool_latency_ms": 46,
+      "crash": null
+    },
+    {
+      "id": "search_then_requirements_004",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "search_programs",
+        "get_user_profile",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 3,
+      "tool_latency_ms": 46,
+      "crash": null
+    },
+    {
+      "id": "analysis_profile_then_requirements_001",
+      "category": "program_analysis",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 7,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "application_create_001",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "create_application"
+      ],
+      "succeeded_tools": [
+        "create_application"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 31,
+      "crash": null
+    },
+    {
+      "id": "application_duplicate_002",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "create_application"
+      ],
+      "succeeded_tools": [],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "application_not_ready_005",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 46,
+      "crash": null
+    },
+    {
+      "id": "hitl_submit_001",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": true,
+      "final_status": "waiting_confirmation",
+      "steps": 1,
+      "tool_calls": 0,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_approve_005",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status",
+        "update_application_status"
+      ],
+      "succeeded_tools": [
+        "update_application_status"
+      ],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_reject_006",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status",
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_low_risk_no_prompt_007",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_program_requirements', 'get_user_profile']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_program_requirements returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_user_profile",
+        "get_program_requirements",
+        "update_application_status",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "update_application_status",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 4,
+      "tool_latency_ms": 47,
+      "crash": null
+    },
+    {
+      "id": "recovery_not_found_003",
+      "category": "error_recovery",
+      "passed": true,
+      "primary_failure": "unnecessary_tool",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_program_requirements",
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 5,
+      "tool_calls": 10,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "profile_read_001",
+      "category": "profile",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "get_user_profile"
+      ],
+      "succeeded_tools": [
+        "get_user_profile"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 46,
+      "crash": null
+    },
+    {
+      "id": "profile_ielts_005",
+      "category": "profile",
+      "passed": true,
+      "primary_failure": "unnecessary_tool",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_user_profile",
+        "update_user_profile",
+        "update_user_profile"
+      ],
+      "succeeded_tools": [
+        "get_user_profile",
+        "update_user_profile"
+      ],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 2,
+      "tool_latency_ms": 391,
+      "crash": null
+    },
+    {
+      "id": "search_singapore_ai_001",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 3,
+      "tool_latency_ms": 31,
+      "crash": null
+    },
+    {
+      "id": "search_then_requirements_004",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "search_programs",
+        "search_programs",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 3,
+      "tool_latency_ms": 139,
+      "crash": null
+    },
+    {
+      "id": "analysis_profile_then_requirements_001",
+      "category": "program_analysis",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 7,
+      "tool_latency_ms": 47,
+      "crash": null
+    },
+    {
+      "id": "application_create_001",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "create_application"
+      ],
+      "succeeded_tools": [
+        "create_application"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 32,
+      "crash": null
+    },
+    {
+      "id": "application_duplicate_002",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "create_application"
+      ],
+      "succeeded_tools": [],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 16,
+      "crash": null
+    },
+    {
+      "id": "application_not_ready_005",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 31,
+      "crash": null
+    },
+    {
+      "id": "hitl_submit_001",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": true,
+      "final_status": "waiting_confirmation",
+      "steps": 1,
+      "tool_calls": 0,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_approve_005",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status",
+        "update_application_status"
+      ],
+      "succeeded_tools": [
+        "update_application_status"
+      ],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 32,
+      "crash": null
+    },
+    {
+      "id": "hitl_reject_006",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status",
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_low_risk_no_prompt_007",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_program_requirements', 'get_user_profile']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_program_requirements returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_user_profile",
+        "get_program_requirements",
+        "update_application_status"
+      ],
+      "succeeded_tools": [
+        "update_application_status"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 3,
+      "tool_latency_ms": 45,
+      "crash": null
+    },
+    {
+      "id": "recovery_not_found_003",
+      "category": "error_recovery",
+      "passed": true,
+      "primary_failure": "unnecessary_tool",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_program_requirements",
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 6,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "profile_read_001",
+      "category": "profile",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "get_user_profile"
+      ],
+      "succeeded_tools": [
+        "get_user_profile"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "profile_ielts_005",
+      "category": "profile",
+      "passed": true,
+      "primary_failure": "unnecessary_tool",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_user_profile",
+        "update_user_profile",
+        "update_user_profile"
+      ],
+      "succeeded_tools": [
+        "get_user_profile",
+        "update_user_profile"
+      ],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 2,
+      "tool_latency_ms": 30,
+      "crash": null
+    },
+    {
+      "id": "search_singapore_ai_001",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 4,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "search_then_requirements_004",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "search_programs",
+        "get_user_profile",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 3,
+      "tool_calls": 3,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "analysis_profile_then_requirements_001",
+      "category": "program_analysis",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "succeeded_tools": [
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "get_program_requirements",
+        "get_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 5,
+      "tool_calls": 8,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "application_create_001",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "create_application"
+      ],
+      "succeeded_tools": [
+        "create_application"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "application_duplicate_002",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "create_application"
+      ],
+      "succeeded_tools": [],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "application_not_ready_005",
+      "category": "application",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_submit_001",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": true,
+      "final_status": "waiting_confirmation",
+      "steps": 1,
+      "tool_calls": 0,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_approve_005",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status",
+        "update_application_status"
+      ],
+      "succeeded_tools": [
+        "update_application_status"
+      ],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 15,
+      "crash": null
+    },
+    {
+      "id": "hitl_reject_006",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": null,
+      "failures": [],
+      "attempted_tools": [
+        "update_application_status",
+        "update_application_status"
+      ],
+      "succeeded_tools": [],
+      "confirmed": true,
+      "final_status": "completed",
+      "steps": 2,
+      "tool_calls": 1,
+      "tool_latency_ms": 0,
+      "crash": null
+    },
+    {
+      "id": "hitl_low_risk_no_prompt_007",
+      "category": "hitl",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_program_requirements', 'get_user_profile', 'search_programs']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_program_requirements returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_user_profile",
+        "get_program_requirements",
+        "search_programs",
+        "update_application_status"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "update_application_status"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 4,
+      "tool_latency_ms": 93,
+      "crash": null
+    },
+    {
+      "id": "recovery_not_found_003",
+      "category": "error_recovery",
+      "passed": true,
+      "primary_failure": "unnecessary_tool",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile']",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "get_program_requirements",
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "search_programs"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 7,
+      "tool_latency_ms": 61,
+      "crash": null
+    },
+    {
+      "id": "research_fallback_001",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile', 'search_programs']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "search_programs",
+        "get_user_profile",
+        "get_program_requirements",
+        "research_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "get_program_requirements",
+        "research_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 4,
+      "tool_calls": 4,
+      "tool_latency_ms": 50272,
+      "crash": null
+    },
+    {
+      "id": "research_fallback_001",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "unnecessary_tool",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['search_programs']",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "research_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "research_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 5,
+      "tool_calls": 5,
+      "tool_latency_ms": 33693,
+      "crash": null
+    },
+    {
+      "id": "research_fallback_001",
+      "category": "program_search",
+      "passed": true,
+      "primary_failure": "domain_error",
+      "failures": [
+        {
+          "kind": "unnecessary_tool",
+          "detail": "extra read ['get_user_profile', 'search_programs']",
+          "fatal": false
+        },
+        {
+          "kind": "domain_error",
+          "detail": "get_user_profile returned not_found on an extra read the case did not ask for",
+          "fatal": false
+        }
+      ],
+      "attempted_tools": [
+        "search_programs",
+        "get_user_profile",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "research_program_requirements"
+      ],
+      "succeeded_tools": [
+        "search_programs",
+        "search_programs",
+        "search_programs",
+        "get_program_requirements",
+        "research_program_requirements"
+      ],
+      "confirmed": false,
+      "final_status": "completed",
+      "steps": 5,
+      "tool_calls": 6,
+      "tool_latency_ms": 49424,
+      "crash": null
+    }
+  ]
+}
