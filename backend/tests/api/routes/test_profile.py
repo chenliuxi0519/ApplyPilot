@@ -5,14 +5,16 @@ from app.core.config import settings
 from app.modules.profiles.models import ProfileFieldHistory
 
 
-def test_get_profile_me_returns_not_found_before_creation(
+def test_get_profile_me_returns_null_before_creation(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
+    """尚未建档是正常状态，应当以 200 + null 表达，而不是错误。"""
     response = client.get(
         f"{settings.API_V1_STR}/profile/me",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert response.json() is None
 
 
 def test_patch_profile_me_creates_confirmed_history(

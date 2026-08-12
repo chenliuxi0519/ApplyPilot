@@ -1,6 +1,6 @@
-# ApplyPilot 架构说明
+# 架构说明
 
-ApplyPilot 采用模块化单体架构。React 负责界面，FastAPI 负责接口、Agent 编排和业务事务，PostgreSQL 保存长期数据。当前规模不需要拆成微服务，模块之间通过明确的服务边界协作。
+单体应用，没拆微服务 —— 这个规模不需要。React 做界面，FastAPI 管接口和 Agent，PostgreSQL 存数据。
 
 ## 模块划分
 
@@ -12,6 +12,7 @@ frontend/src/features/applications  申请看板与任务
 
 backend/app/agent                    Agent 执行循环和模型适配
 backend/app/harness                  工具校验、权限和执行
+backend/app/research                 读官网、抽字段、校验原文
 backend/app/tools                    Agent 工具适配
 backend/app/modules/profiles         个人档案领域
 backend/app/modules/programs         项目与证据领域

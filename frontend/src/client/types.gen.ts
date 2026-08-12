@@ -155,18 +155,13 @@ export type ConfirmationPublic = {
     summary: ConfirmationSummary;
 };
 
-/**
- * What the user is being asked to approve, in their own terms.
- *
- * Assembled from read-only domain lookups rather than echoed from the tool
- * arguments, so nothing internal reaches the browser.
- */
 export type ConfirmationSummary = {
     application_id?: (string | null);
     program_label?: (string | null);
     application_cycle?: (string | null);
     current_status?: (string | null);
     target_status?: (string | null);
+    changes?: Array<FieldChange>;
 };
 
 export type ConflictPublic = {
@@ -238,6 +233,15 @@ export type EvidenceReview = {
 export type EvidenceSourceType = 'program_page' | 'admission_page' | 'fees_page' | 'university_english_requirement' | 'official_pdf' | 'official_faq' | 'handbook';
 
 export type EvidenceStatus = 'unverified' | 'verified' | 'conflicted' | 'superseded' | 'rejected';
+
+/**
+ * 一处待写入的字段改动，字段名保持原样，中文名由前端负责。
+ */
+export type FieldChange = {
+    field: string;
+    current?: (string | null);
+    next: string;
+};
 
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
@@ -631,7 +635,7 @@ export type PrivateCreateUserData = {
 
 export type PrivateCreateUserResponse = (UserPublic);
 
-export type ProfileReadProfileMeResponse = (UserProfilePublic);
+export type ProfileReadProfileMeResponse = ((UserProfilePublic | null));
 
 export type ProfileUpdateProfileMeData = {
     requestBody: UserProfileUpdate;

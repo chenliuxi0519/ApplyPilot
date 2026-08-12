@@ -15,6 +15,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
 import { Main, type NavItem } from "./Main"
@@ -39,12 +40,17 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-[var(--border)]">
       <SidebarHeader className="h-16 justify-center border-b border-[var(--border-subtle)] px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
-        <Logo variant="responsive" />
+        <div className="flex items-center justify-between gap-2">
+          <Logo variant="responsive" />
+          <SidebarTrigger className="shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <Main items={items} />
       </SidebarContent>
       <SidebarFooter className="gap-2 border-t border-[var(--border-subtle)] p-3">
+        {/* 折叠后头部的收起按钮会隐藏，这里补一个展开入口。 */}
+        <SidebarTrigger className="hidden text-muted-foreground group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:self-center" />
         <SidebarAppearance />
         <User user={currentUser} />
       </SidebarFooter>

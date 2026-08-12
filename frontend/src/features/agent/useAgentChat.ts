@@ -88,7 +88,11 @@ export function useAgentChat() {
       setMessages((current) =>
         current.map((message) =>
           message.role === "assistant" && message.runId === variables.runId
-            ? { ...message, confirmation: null }
+            ? {
+                ...message,
+                confirmation: null,
+                decision: variables.approved ? "approved" : "rejected",
+              }
             : message,
         ),
       )

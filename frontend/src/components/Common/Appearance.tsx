@@ -8,29 +8,40 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SidebarMenuItem } from "@/components/ui/sidebar"
 
 export const SidebarAppearance = () => {
   const { resolvedTheme, setTheme } = useTheme()
   const dark = resolvedTheme === "dark"
 
   return (
-    <SidebarMenuItem>
+    // 不能用 <li>：外面没有 <ul>，浏览器会给它加上项目符号。
+    <div className="relative">
       <button
         type="button"
         data-testid="theme-button"
         onClick={() => setTheme(dark ? "light" : "dark")}
         className="flex h-9 w-full items-center justify-between px-1 text-xs text-[var(--text-muted)] group-data-[collapsible=icon]:justify-center"
       >
-        <span className="group-data-[collapsible=icon]:hidden">{dark ? "深色模式" : "浅色模式"}</span>
-        <span className={`relative h-5 w-9 rounded-full ${dark ? "bg-[#1A2540]" : "bg-[#E2E8F6]"}`}>
-          <span className={`absolute top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] text-white transition-transform ${dark ? "translate-x-[18px]" : "translate-x-0.5"}`}>
+        <span className="group-data-[collapsible=icon]:hidden">
+          {dark ? "深色模式" : "浅色模式"}
+        </span>
+        <span
+          className={`relative h-5 w-9 rounded-full ${dark ? "bg-[#1A2540]" : "bg-[#E2E8F6]"}`}
+        >
+          <span
+            className={`absolute top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] text-white transition-transform ${dark ? "translate-x-[18px]" : "translate-x-0.5"}`}
+          >
             {dark ? "☾" : "☀"}
           </span>
         </span>
-        <span data-testid={dark ? "light-mode" : "dark-mode"} className="sr-only">切换主题</span>
+        <span
+          data-testid={dark ? "light-mode" : "dark-mode"}
+          className="sr-only"
+        >
+          切换主题
+        </span>
       </button>
-    </SidebarMenuItem>
+    </div>
   )
 }
 

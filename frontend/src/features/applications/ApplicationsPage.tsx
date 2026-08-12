@@ -151,9 +151,7 @@ export function ApplicationsPage() {
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <h1 className="page-title">申请管理</h1>
-          <p className="page-subtitle">
-            按阶段、时间和材料任务持续推进申请。
-          </p>
+          <p className="page-subtitle">按阶段、时间和材料任务持续推进申请。</p>
         </div>
         <div className="flex rounded-lg border p-1">
           <Button
@@ -193,29 +191,39 @@ export function ApplicationsPage() {
                 (row) => row.application.status === status,
               )
               return (
-                <section key={status} className="w-[280px] min-h-[400px] overflow-hidden rounded-[9px] bg-[var(--bg)]">
+                <section
+                  key={status}
+                  className="w-[280px] min-h-[400px] overflow-hidden rounded-[9px] bg-[var(--bg)]"
+                >
                   <div className="flex items-center justify-between border-l-[3px] border-l-primary bg-[var(--surface-raised)] px-4 py-3">
                     <h2 className="text-[13px] font-semibold">
                       {applicationStatusLabels[status]}
                     </h2>
-                    <Badge className="font-mono text-[11px]" variant="secondary">{cards.length}</Badge>
+                    <Badge
+                      className="font-mono text-[11px]"
+                      variant="secondary"
+                    >
+                      {cards.length}
+                    </Badge>
                   </div>
                   {cards.length === 0 ? (
                     <div className="m-2.5 min-h-[300px] rounded-xl border border-dashed p-5 text-center text-xs text-muted-foreground">
                       暂无项目
                     </div>
                   ) : (
-                    <div className="p-2.5">{cards.map((row) => (
-                      <ApplicationCard
-                        key={row.application.id}
-                        detail={row.application}
-                        title={
-                          row.program
-                            ? programTitle(row.program)
-                            : "项目加载中…"
-                        }
-                      />
-                    ))}</div>
+                    <div className="p-2.5">
+                      {cards.map((row) => (
+                        <ApplicationCard
+                          key={row.application.id}
+                          detail={row.application}
+                          title={
+                            row.program
+                              ? programTitle(row.program)
+                              : "项目加载中…"
+                          }
+                        />
+                      ))}
+                    </div>
                   )}
                 </section>
               )

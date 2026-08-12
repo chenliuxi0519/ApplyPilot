@@ -33,8 +33,12 @@ function UserInfo({ fullName, email }: UserInfoProps) {
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col items-start min-w-0">
-        <p className="w-full truncate text-xs font-medium text-[var(--text-secondary)]">{email}</p>
-        <p className="w-full truncate font-mono text-[11px] text-[var(--text-muted)]">{fullName || "申请者"}</p>
+        <p className="w-full truncate text-xs font-medium text-[var(--text-secondary)]">
+          {email}
+        </p>
+        <p className="w-full truncate font-mono text-[11px] text-[var(--text-muted)]">
+          {fullName || "申请者"}
+        </p>
       </div>
     </div>
   )

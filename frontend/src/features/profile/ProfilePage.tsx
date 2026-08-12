@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Save } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { useProfile } from "@/hooks/useProfile"
 
 type FormState = Record<keyof UserProfileUpdate, string>
 
@@ -37,11 +38,7 @@ export function ProfilePage() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState(emptyForm)
   const [saved, setSaved] = useState(false)
-  const profile = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => ProfileService.readProfileMe(),
-    retry: false,
-  })
+  const profile = useProfile()
 
   useEffect(() => {
     if (!profile.data) return
@@ -118,22 +115,49 @@ export function ProfilePage() {
     <div className="space-y-[14px]">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-        <h1 className="page-title">个人档案</h1>
-        <p className="page-subtitle">
-          {profileMissing
-            ? "填写以下信息建立档案；保存后会用于项目匹配。"
-            : "这些信息会用于项目匹配和风险评估，随时可以修改。"}
-        </p>
+          <h1 className="page-title">个人档案</h1>
+          <p className="page-subtitle">
+            {profileMissing
+              ? "填写以下信息建立档案；保存后会用于项目匹配。"
+              : "这些信息会用于项目匹配和风险评估，随时可以修改。"}
+          </p>
         </div>
         <div className="lift-card flex items-center gap-3 rounded-[11px] border bg-[var(--surface)] px-[18px] py-3">
           <div className="relative size-[52px]">
-            <svg className="size-[52px] -rotate-90" viewBox="0 0 52 52" aria-hidden="true">
-              <circle cx="26" cy="26" r="21" fill="none" stroke="var(--border)" strokeWidth="4" />
-              <circle cx="26" cy="26" r="21" fill="none" stroke="var(--primary)" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${completeness * 1.319} 132`} />
+            <svg
+              className="size-[52px] -rotate-90"
+              viewBox="0 0 52 52"
+              aria-hidden="true"
+            >
+              <circle
+                cx="26"
+                cy="26"
+                r="21"
+                fill="none"
+                stroke="var(--border)"
+                strokeWidth="4"
+              />
+              <circle
+                cx="26"
+                cy="26"
+                r="21"
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${completeness * 1.319} 132`}
+              />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center font-mono text-[13px]">{completeness}%</span>
+            <span className="absolute inset-0 flex items-center justify-center font-mono text-[13px]">
+              {completeness}%
+            </span>
           </div>
-          <div><p className="text-xs text-[var(--text-secondary)]">档案完整度</p><p className="text-[11px] text-[var(--text-muted)]">继续填写以提升匹配精度</p></div>
+          <div>
+            <p className="text-xs text-[var(--text-secondary)]">档案完整度</p>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              继续填写以提升匹配精度
+            </p>
+          </div>
         </div>
       </div>
       <Card className="section-card">
@@ -252,7 +276,11 @@ export function ProfilePage() {
         </CardContent>
       </Card>
       <div className="flex justify-end">
-        <Button className="rounded-lg px-[26px]" onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button
+          className="rounded-lg px-[26px]"
+          onClick={() => save.mutate()}
+          disabled={save.isPending}
+        >
           <Save />
           {save.isPending ? "保存中…" : saved ? "已保存 ✓" : "保存档案"}
         </Button>
@@ -270,7 +298,9 @@ function Field({
 }) {
   return (
     <Label className="flex flex-col items-stretch gap-[5px]">
-      <span className="text-[10px] font-bold uppercase tracking-[.07em] text-[var(--text-muted)]">{label}</span>
+      <span className="text-[10px] font-bold uppercase tracking-[.07em] text-[var(--text-muted)]">
+        {label}
+      </span>
       {children}
     </Label>
   )

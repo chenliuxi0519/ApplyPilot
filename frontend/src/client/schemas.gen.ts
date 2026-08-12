@@ -878,14 +878,18 @@ export const ConfirmationSummarySchema = {
                 }
             ],
             title: 'Target Status'
+        },
+        changes: {
+            items: {
+                '$ref': '#/components/schemas/FieldChange'
+            },
+            type: 'array',
+            title: 'Changes',
+            default: []
         }
     },
     type: 'object',
-    title: 'ConfirmationSummary',
-    description: `What the user is being asked to approve, in their own terms.
-
-Assembled from read-only domain lookups rather than echoed from the tool
-arguments, so nothing internal reaches the browser.`
+    title: 'ConfirmationSummary'
 } as const;
 
 export const ConflictPublicSchema = {
@@ -1301,6 +1305,34 @@ export const EvidenceStatusSchema = {
     type: 'string',
     enum: ['unverified', 'verified', 'conflicted', 'superseded', 'rejected'],
     title: 'EvidenceStatus'
+} as const;
+
+export const FieldChangeSchema = {
+    properties: {
+        field: {
+            type: 'string',
+            title: 'Field'
+        },
+        current: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Current'
+        },
+        next: {
+            type: 'string',
+            title: 'Next'
+        }
+    },
+    type: 'object',
+    required: ['field', 'next'],
+    title: 'FieldChange',
+    description: '一处待写入的字段改动，字段名保持原样，中文名由前端负责。'
 } as const;
 
 export const HTTPValidationErrorSchema = {

@@ -29,7 +29,9 @@ export function ActivitySidebar({
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto border-r bg-[var(--bg)]">
       <div className="border-b px-4 py-3">
-        <h2 className="text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--text-muted)]">最近对话</h2>
+        <h2 className="text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--text-muted)]">
+          最近对话
+        </h2>
         <p className="text-xs text-muted-foreground">点击可查看完整记录</p>
       </div>
 

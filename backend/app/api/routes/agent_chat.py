@@ -22,6 +22,7 @@ from app.models import User
 from app.modules.agent_runs import service as agent_run_service
 from app.modules.agent_runs.recorder import PostgresRunRecorder
 from app.modules.applications import service as application_service
+from app.modules.profiles import service as profile_service
 from app.modules.programs import service as program_service
 from app.tools.registry import BUSINESS_TOOLS
 
@@ -48,12 +49,21 @@ class AgentChatRequest(SQLModel):
     conversation_id: str | None = None
 
 
+class FieldChange(SQLModel):
+    """一处待写入的字段改动，字段名保持原样，中文名由前端负责。"""
+
+    field: str
+    current: str | None = None
+    next: str
+
+
 class ConfirmationSummary(SQLModel):
     application_id: uuid.UUID | None = None
     program_label: str | None = None
     application_cycle: str | None = None
     current_status: str | None = None
     target_status: str | None = None
+    changes: list[FieldChange] = []
 
 
 class ConfirmationPublic(SQLModel):
@@ -99,12 +109,47 @@ def _build_loop(
     )
 
 
+def _display(value: Any) -> str:
+    if value is None:
+        return "—"
+    if isinstance(value, list):
+        return "、".join(str(item) for item in value) if value else "—"
+    return str(value)
+
+
+def _profile_changes(
+    session: Session, user: User, arguments: dict[str, Any]
+) -> list[FieldChange]:
+    """列出档案更新会改动的字段，附上当前值，便于用户逐项核对。"""
+    try:
+        profile = profile_service.get_profile_or_raise(session=session, user_id=user.id)
+    except profile_service.ProfileNotFoundError:
+        profile = None
+
+    changes: list[FieldChange] = []
+    for field, value in arguments.items():
+        current = None if profile is None else getattr(profile, field, None)
+        changes.append(
+            FieldChange(
+                field=field,
+                current=None if profile is None else _display(current),
+                next=_display(value),
+            )
+        )
+    return changes
+
+
 def _summary(
     session: Session, user: User, pending: PendingConfirmation
 ) -> ConfirmationSummary:
     raw_id = pending.arguments.get("application_id")
     target = pending.arguments.get("target_status")
     summary = ConfirmationSummary(target_status=None if target is None else str(target))
+
+    if pending.tool_name == "update_user_profile":
+        summary.changes = _profile_changes(session, user, pending.arguments)
+        return summary
+
     if raw_id is None:
         return summary
     try:

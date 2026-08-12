@@ -4,20 +4,19 @@ from decimal import Decimal
 
 from app.modules.programs.models import EvidenceSourceType, RequirementFieldName
 from app.modules.programs.schemas import EvidenceCreate
+from app.research.fetcher import OFFICIAL_DOMAIN_SUFFIXES
 
-CAPTURED_AT = datetime(2026, 8, 9, tzinfo=UTC)
+# 本批要求于该日读取自各校官网；每条都附有页面原文，可回溯核对。
+CAPTURED_AT = datetime(2026, 8, 12, tzinfo=UTC)
 
-
-OFFICIAL_DOMAIN_SUFFIXES = (
-    "nus.edu.sg",
-    "ntu.edu.sg",
-    "hkust.edu.hk",
-    "hku.hk",
-    "cuhk.edu.hk",
-    "imperial.ac.uk",
-    "ucl.ac.uk",
-    "ed.ac.uk",
-)
+# 域名白名单与按需读取模块共用一份，避免两处各自维护后逐渐失配。
+__all__ = [
+    "CAPTURED_AT",
+    "GOLD_REQUIREMENTS",
+    "OFFICIAL_DOMAIN_SUFFIXES",
+    "GoldRequirement",
+    "gold_programs",
+]
 
 
 @dataclass(frozen=True)
@@ -54,64 +53,37 @@ class GoldRequirement:
         )
 
 
-_NUS_ADMISSIONS = "https://www.comp.nus.edu.sg/programmes/pg/mcomp-ai/admissions/"
-_NUS_APPLICATION = "https://www.comp.nus.edu.sg/programmes/pg/mcomp-ai/application/"
-_NUS_CYCLE_BASIS = (
-    "The application page gives one intake, opening 1 October 2025 and closing "
-    "31 January 2026. The August intake that follows that window is August "
-    "2026, which is academic year 2026/27."
-)
-
-_NTU_PROGRAMME = (
-    "https://www.ntu.edu.sg/education/graduate-programme/"
-    "master-of-science-in-artificial-intelligence"
-)
-_NTU_CYCLE_BASIS = (
-    "The programme page states its fee as applying to 'Academic Year 2025/26 "
-    "and after'; 2025/26 is the only academic year the page names, so it is "
-    "the cycle used for everything read from it."
-)
-
-_HKUST_CATALOG = "https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-ai"
-_HKUST_CYCLE_BASIS = "The catalogue itself is the 2026-27 edition."
-
-_HKU_APPLICATION = "https://master.cds.hku.hk/msccs/admission/application-details/"
-_HKU_CYCLE_BASIS = "The page states '2026/27 Fall intake (September 2026)'."
-
-_EDINBURGH_DEGREE = (
-    "https://study.ed.ac.uk/postgraduate/degrees/index.php?r=site/view&id=107"
-)
-_EDINBURGH_CYCLE_BASIS = (
-    "The page states 'Year of entry: 2026', which is the 2026/27 academic year."
-)
-
-
 GOLD_REQUIREMENTS: tuple[GoldRequirement, ...] = (
+    # ---- NUS · Master of Computing in Artificial Intelligence ----
     GoldRequirement(
         university_short_name="NUS",
         program_name="Master of Computing in Artificial Intelligence",
         application_cycle="2026/27",
         field_name=RequirementFieldName.IELTS_OVERALL,
         numeric_value=Decimal("6.0"),
-        source_url=_NUS_ADMISSIONS,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_NUS_CYCLE_BASIS,
+        source_url="https://www.comp.nus.edu.sg/programmes/pg/mcomp-ai/admissions/",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="or IELTS score of 6.0",
+    ),
+    GoldRequirement(
+        university_short_name="NUS",
+        program_name="Master of Computing in Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("90"),
+        source_url="https://www.comp.nus.edu.sg/programmes/pg/mcomp-ai/admissions/",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="The minimum TOEFL score for Internet Based Test (IBT) is 90",
     ),
     GoldRequirement(
         university_short_name="NUS",
         program_name="Master of Computing in Artificial Intelligence",
         application_cycle="2026/27",
         field_name=RequirementFieldName.DEGREE_BACKGROUND,
-        text_value=(
-            "A good honours degree in computing; or a good honours degree in a "
-            "related discipline with 2 years IT industry experience; or a good "
-            "bachelor's degree in computing with 2 years IT industry "
-            "experience; or a good bachelor's or honours degree in a business "
-            "related discipline with 2 years IT industry experience"
-        ),
-        source_url=_NUS_ADMISSIONS,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_NUS_CYCLE_BASIS,
+        text_value="A good honours degree in computing; or A good honours degree in a related discipline with 2 years IT industry experience; or A good bachelor's degree in computing with 2 years IT industry experience; or A good bachelor's or honours degree in business related discipline with 2 years IT industry experience. The above requirements are the minimum admission requirements. Admission is on a competitive basis and preference will be given to applicants with strong mathematical training and related project or work experience.",
+        source_url="https://www.comp.nus.edu.sg/programmes/pg/mcomp-ai/admissions/",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="A good honours degree in computing; or A good honours degree in a related discipline with 2 years IT industry experience; or A good bachelor's degree in computing with 2 years IT industry experience; or A good bachelor's or honours degree in business related discipline with 2 years IT industry experience. The above requirements are the minimum admission requirements. Admission is on a competitive basis and preference will be given to applicants with strong mathematical training and related project or work experience.",
     ),
     GoldRequirement(
         university_short_name="NUS",
@@ -119,71 +91,163 @@ GOLD_REQUIREMENTS: tuple[GoldRequirement, ...] = (
         application_cycle="2026/27",
         field_name=RequirementFieldName.APPLICATION_DEADLINE,
         date_value=date(2026, 1, 31),
-        source_url=_NUS_APPLICATION,
+        source_url="https://www.comp.nus.edu.sg/programmes/pg/mcomp-ai/application/",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=(
-            f"{_NUS_CYCLE_BASIS} The page gives the closing date as 31 January 2026."
-        ),
+        basis="31 January 2026",
+    ),
+    # ---- NTU · Master of Computing in Applied Artificial Intelligence ----
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="Master of Computing in Applied Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("6.0"),
+        source_url="https://www.ntu.edu.sg/education/graduate-programme/master-of-computing-in-applied-ai-mcaai",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="TOEFL ≥ 85 or IELTS ≥ 6.0 is required for graduates from non-English medium universities.",
     ),
     GoldRequirement(
         university_short_name="NTU",
-        program_name="MSc Artificial Intelligence",
-        application_cycle="2025/26",
+        program_name="Master of Computing in Applied Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("85"),
+        source_url="https://www.ntu.edu.sg/education/graduate-programme/master-of-computing-in-applied-ai-mcaai",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="TOEFL ≥ 85 or IELTS ≥ 6.0 is required for graduates from non-English medium universities.",
+    ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="Master of Computing in Applied Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.DEGREE_BACKGROUND,
+        text_value="An NTU recognised undergraduate degree; the programme is tailored for working professionals with a Bachelor's degree in any discipline.",
+        source_url="https://www.ntu.edu.sg/education/graduate-programme/master-of-computing-in-applied-ai-mcaai",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="An NTU recognised undergraduate degree. … Tailored for working professionals with a Bachelor's degree in any discipline",
+    ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="Master of Computing in Applied Artificial Intelligence",
+        application_cycle="2026/27",
         field_name=RequirementFieldName.IELTS_OVERALL,
         numeric_value=Decimal("6.5"),
-        source_url=_NTU_PROGRAMME,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_NTU_CYCLE_BASIS,
+        source_url="https://www.ntu.edu.sg/admissions/graduate/cwadmissionguide",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="College of Computing and Data Science\n\n6.5\n\n100\n\n5",
     ),
     GoldRequirement(
         university_short_name="NTU",
-        program_name="MSc Artificial Intelligence",
-        application_cycle="2025/26",
+        program_name="Master of Computing in Applied Artificial Intelligence",
+        application_cycle="2026/27",
         field_name=RequirementFieldName.TOEFL_OVERALL,
         numeric_value=Decimal("100"),
-        source_url=_NTU_PROGRAMME,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_NTU_CYCLE_BASIS,
+        source_url="https://www.ntu.edu.sg/admissions/graduate/cwadmissionguide",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="College of Computing and Data Science\n\n6.5\n\n100\n\n5",
     ),
     GoldRequirement(
         university_short_name="NTU",
-        program_name="MSc Artificial Intelligence",
-        application_cycle="2025/26",
+        program_name="Master of Computing in Applied Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.APPLICATION_DEADLINE,
+        date_value=date(2026, 3, 31),
+        source_url="https://www.ntu.edu.sg/admissions/graduate/cwadmissionguide",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="College of Computing and Data Science– \n\nApplies only to MComp in Applied Artificial Intelligence\n\n1 November\n\n31 March",
+    ),
+    # ---- NTU · MSc Enterprise Artificial Intelligence ----
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Enterprise Artificial Intelligence",
+        application_cycle="2026/27",
         field_name=RequirementFieldName.DEGREE_BACKGROUND,
-        text_value=(
-            "A good honours degree in computer science, computer engineering "
-            "or a related discipline with solid mathematical training; or a "
-            "good bachelor's degree in computer science, computer engineering "
-            "or a related discipline with solid mathematical training and "
-            "2 years relevant industry experience"
-        ),
-        source_url=_NTU_PROGRAMME,
+        text_value="A Bachelor's degree with honours or its equivalent in any discipline from an institution of recognised standing.",
+        source_url="https://www.ntu.edu.sg/education/graduate-programme/master-of-science-in-enterprise-artificial-intelligence",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_NTU_CYCLE_BASIS,
+        basis="A Bachelor's degree with honours or its equivalent in any discipline from an institution of recognised standing.",
+    ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Enterprise Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("90"),
+        source_url="https://www.ntu.edu.sg/education/graduate-programme/master-of-science-in-enterprise-artificial-intelligence",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="TOEFL iBT: 90 or 4.5",
+    ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Enterprise Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("6"),
+        source_url="https://www.ntu.edu.sg/admissions/graduate/cwadmissionguide",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="NTU Academy for Professional and Continuing Education\n\n6\n\n85\n\n4.5",
+    ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Enterprise Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("85"),
+        source_url="https://www.ntu.edu.sg/admissions/graduate/cwadmissionguide",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="NTU Academy for Professional and Continuing Education\n\n6\n\n85\n\n4.5",
+    ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Enterprise Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.APPLICATION_DEADLINE,
+        date_value=date(2026, 3, 31),
+        source_url="https://www.ntu.edu.sg/admissions/graduate/cwadmissionguide",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="NTU Academy for Professional and Continuing Education - \n\nMaster of Science in Enterprise Artificial Intelligence\n\n1 November\n\n31 March",
+    ),
+    # ---- NTU · MSc Artificial Intelligence ----
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("6.5"),
+        source_url="https://www.ntu.edu.sg/computing/admissions/graduate-programmes/detail/master-of-science-in-artificial-intelligence",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="English language proficiency – TOEFL (iBT ≥ 100) / IELTS (≥ 6.5) OR certification of English as medium of instruction (MOI).",
     ),
     GoldRequirement(
         university_short_name="NTU",
         program_name="MSc Artificial Intelligence",
-        application_cycle="2025/26",
-        field_name=RequirementFieldName.TUITION,
-        money_amount=Decimal("63220"),
-        money_currency="SGD",
-        source_url=_NTU_PROGRAMME,
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("100"),
+        source_url="https://www.ntu.edu.sg/computing/admissions/graduate-programmes/detail/master-of-science-in-artificial-intelligence",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=(
-            f"{_NTU_CYCLE_BASIS} The page states 'S$63,220' as the fee for "
-            "Academic Year 2025/26 and after."
-        ),
+        basis="TOEFL (iBT ≥ 100) / IELTS (≥ 6.5)",
     ),
+    GoldRequirement(
+        university_short_name="NTU",
+        program_name="MSc Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.DEGREE_BACKGROUND,
+        text_value="Option A: a good honours degree in computer science, computer engineering or a related discipline with solid mathematical training; Option B: a good bachelor's degree in computer science, computer engineering or a related discipline with solid mathematical training and 2 years relevant industry experience. Related disciplines include but are not limited to bachelor's programmes offered by the College of Engineering, Nanyang Technological University, Singapore.",
+        source_url="https://www.ntu.edu.sg/computing/admissions/graduate-programmes/detail/master-of-science-in-artificial-intelligence",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="A) A good honours degree in computer science, computer engineering or a related discipline with solid mathematical training\n\nor \n\nB) A good bachelor's degree in computer science, computer engineering or a related discipline with solid mathematical training and 2 years relevant industry experience.",
+    ),
+    # ---- HKUST · MSc Artificial Intelligence ----
     GoldRequirement(
         university_short_name="HKUST",
         program_name="MSc Artificial Intelligence",
         application_cycle="2026/27",
         field_name=RequirementFieldName.IELTS_OVERALL,
         numeric_value=Decimal("6.5"),
-        source_url=_HKUST_CATALOG,
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-ai",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_HKUST_CYCLE_BASIS,
+        basis="IELTS (Academic Module): Overall score: 6.5",
     ),
     GoldRequirement(
         university_short_name="HKUST",
@@ -191,24 +255,29 @@ GOLD_REQUIREMENTS: tuple[GoldRequirement, ...] = (
         application_cycle="2026/27",
         field_name=RequirementFieldName.IELTS_MIN_BAND,
         numeric_value=Decimal("5.5"),
-        source_url=_HKUST_CATALOG,
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-ai",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=f"{_HKUST_CYCLE_BASIS} The page states 'All sub-score: 5.5'.",
+        basis="All sub-score: 5.5",
     ),
     GoldRequirement(
         university_short_name="HKUST",
         program_name="MSc Artificial Intelligence",
         application_cycle="2026/27",
-        field_name=RequirementFieldName.DEGREE_BACKGROUND,
-        text_value=(
-            "A bachelor's degree in Computer Engineering, Computer Science or "
-            "a related discipline, or a bachelor's degree in other disciplines "
-            "with at least two years of post-qualification work experience "
-            "relevant to the program"
-        ),
-        source_url=_HKUST_CATALOG,
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("80"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-ai",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_HKUST_CYCLE_BASIS,
+        basis="TOEFL-iBT: 80 (for tests taken prior to 21 January 2026) *",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.APPLICATION_DEADLINE,
+        date_value=date(2026, 3, 1),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-ai",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="Full-time: 1 Nov 2025 (Round 1); 1 Jan 2026 (Round 2); 1 Mar 2026 (Round 3)",
     ),
     GoldRequirement(
         university_short_name="HKUST",
@@ -217,88 +286,165 @@ GOLD_REQUIREMENTS: tuple[GoldRequirement, ...] = (
         field_name=RequirementFieldName.TUITION,
         money_amount=Decimal("400000"),
         money_currency="HKD",
-        source_url=_HKUST_CATALOG,
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-ai",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=f"{_HKUST_CYCLE_BASIS} The page states 'HK$400,000'.",
+        basis="Program Fee\n\nHK$400,000",
+    ),
+    # ---- HKUST · MSc Information Technology ----
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Information Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("6.5"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-it",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="IELTS (Academic Module): Overall score: 6.5 \nand\n All sub-score: 5.5 *",
     ),
     GoldRequirement(
         university_short_name="HKUST",
-        program_name="MSc Artificial Intelligence",
+        program_name="MSc Information Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_MIN_BAND,
+        numeric_value=Decimal("5.5"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-it",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="IELTS (Academic Module): Overall score: 6.5 \nand\n All sub-score: 5.5 *",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Information Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("80"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-it",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="TOEFL-iBT: 80 (for tests taken prior to 21 January 2026) *",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Information Technology",
         application_cycle="2026/27",
         field_name=RequirementFieldName.APPLICATION_DEADLINE,
         date_value=date(2026, 3, 1),
-        source_url=_HKUST_CATALOG,
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-it",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=(
-            f"{_HKUST_CYCLE_BASIS} The page lists three rounds — 1 Nov 2025, "
-            "1 Jan 2026, 1 Mar 2026 — and the final round is recorded as the "
-            "deadline."
-        ),
+        basis="For 2026/27 Fall Term Intake (commencing in Sep 2026):\n\nNon-local Applicants*\n\nFull-time: 1 Nov 2025 (Round 1); 1 Jan 2026 (Round 2); 1 Mar 2026 (Round 3)",
     ),
     GoldRequirement(
-        university_short_name="HKU",
-        program_name="MSc Computer Science",
+        university_short_name="HKUST",
+        program_name="MSc Information Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TUITION,
+        money_amount=Decimal("300000"),
+        money_currency="HKD",
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-it",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="Full-time: HK$300,000",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Information Technology",
         application_cycle="2026/27",
         field_name=RequirementFieldName.DEGREE_BACKGROUND,
-        text_value=(
-            "Shall hold a Bachelor's degree of this University or a "
-            "qualification of equivalent standard"
-        ),
-        source_url=_HKU_APPLICATION,
+        text_value="A bachelor's degree in Computer Engineering, Computer Science or a related area",
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-it",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_HKU_CYCLE_BASIS,
+        basis="A bachelor's degree in Computer Engineering, Computer Science or a related area",
     ),
+    # ---- HKUST · MSc Big Data Technology ----
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Big Data Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("6.5"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-bdt",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="IELTS (Academic Module): Overall score: 6.5",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Big Data Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_MIN_BAND,
+        numeric_value=Decimal("5.5"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-bdt",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="All sub-score: 5.5",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Big Data Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("80"),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-bdt",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="TOEFL-iBT: 80 (for tests taken prior to 21 January 2026) *",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Big Data Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.APPLICATION_DEADLINE,
+        date_value=date(2026, 3, 1),
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-bdt",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="Full-time: 1 Dec 2025 (Round 1); 1 Mar 2026 (Round 2)",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Big Data Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TUITION,
+        money_amount=Decimal("330000"),
+        money_currency="HKD",
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-bdt",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="Full-time: HK$330,000",
+    ),
+    GoldRequirement(
+        university_short_name="HKUST",
+        program_name="MSc Big Data Technology",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.DEGREE_BACKGROUND,
+        text_value="A bachelor's degree in Computer Engineering, Computer Science, Mathematics or a related area, or (i) A bachelor's degree in other disciplines and (ii) relevant work experience in IT and Mathematics related fields",
+        source_url="https://prog-crs.hkust.edu.hk/pgprog/2026-27/msc-bdt",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="A bachelor's degree in Computer Engineering, Computer Science, Mathematics or a related area, or (i) A bachelor&rsquo;s degree in other disciplines and (ii) relevant work experience in IT and Mathematics related fields",
+    ),
+    # ---- HKU · MSc Computer Science ----
     GoldRequirement(
         university_short_name="HKU",
         program_name="MSc Computer Science",
         application_cycle="2026/27",
         field_name=RequirementFieldName.APPLICATION_DEADLINE,
         date_value=date(2026, 4, 30),
-        source_url=_HKU_APPLICATION,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=(
-            f"{_HKU_CYCLE_BASIS} The page gives a main round of 1 Dec 2025 and "
-            "a clearing round of 30 Apr 2026; the clearing round is recorded "
-            "as the deadline."
-        ),
+        source_url="https://master.cds.hku.hk/msccs/admission/application-details/",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="Clearing Round Deadline: 30 Apr 2026 (HKT noon)",
     ),
     GoldRequirement(
-        university_short_name="Edinburgh",
-        program_name="MSc Artificial Intelligence",
+        university_short_name="HKU",
+        program_name="MSc Computer Science",
         application_cycle="2026/27",
-        field_name=RequirementFieldName.IELTS_OVERALL,
-        numeric_value=Decimal("7.0"),
-        source_url=_EDINBURGH_DEGREE,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_EDINBURGH_CYCLE_BASIS,
+        field_name=RequirementFieldName.DEGREE_BACKGROUND,
+        text_value="Shall hold a Bachelor's degree of this University or a qualification of equivalent standard from this University or another comparable institution accepted for this purpose.",
+        source_url="https://master.cds.hku.hk/msccs/admission/application-details/",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="shall hold a Bachelor's degree of this University or a qualification of equivalent standard from this University or another comparable institution accepted for this purpose",
     ),
-    GoldRequirement(
-        university_short_name="Edinburgh",
-        program_name="MSc Artificial Intelligence",
-        application_cycle="2026/27",
-        field_name=RequirementFieldName.IELTS_MIN_BAND,
-        numeric_value=Decimal("6.5"),
-        source_url=_EDINBURGH_DEGREE,
-        source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=(
-            f"{_EDINBURGH_CYCLE_BASIS} The page states 'total 7.0 with at "
-            "least 6.5 in each component'."
-        ),
-    ),
+    # ---- Edinburgh · MSc Artificial Intelligence ----
     GoldRequirement(
         university_short_name="Edinburgh",
         program_name="MSc Artificial Intelligence",
         application_cycle="2026/27",
         field_name=RequirementFieldName.DEGREE_BACKGROUND,
-        text_value=(
-            "A UK 2:1 honours degree, or its international equivalent, in "
-            "informatics, artificial intelligence, cognitive science, computer "
-            "science, econometrics, electrical engineering, linguistics, "
-            "mathematics, philosophy, physics or psychology"
-        ),
-        source_url=_EDINBURGH_DEGREE,
+        text_value="A UK 2:1 honours degree, or its international equivalent, in informatics, artificial intelligence, cognitive science, computer science, econometrics, electrical engineering, linguistics, mathematics, philosophy, physics or psychology.",
+        source_url="https://study.ed.ac.uk/programmes/postgraduate-taught/107-artificial-intelligence",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=_EDINBURGH_CYCLE_BASIS,
+        basis="A UK 2:1 honours degree, or its international equivalent, in informatics, artificial intelligence, cognitive science, computer science, econometrics, electrical engineering, linguistics, mathematics, philosophy, physics or psychology.",
     ),
     GoldRequirement(
         university_short_name="Edinburgh",
@@ -306,12 +452,115 @@ GOLD_REQUIREMENTS: tuple[GoldRequirement, ...] = (
         application_cycle="2026/27",
         field_name=RequirementFieldName.APPLICATION_DEADLINE,
         date_value=date(2026, 3, 31),
-        source_url=_EDINBURGH_DEGREE,
+        source_url="https://study.ed.ac.uk/programmes/postgraduate-taught/107-artificial-intelligence",
         source_type=EvidenceSourceType.PROGRAM_PAGE,
-        basis=(
-            f"{_EDINBURGH_CYCLE_BASIS} The page gives the application deadline "
-            "as 31 March 2026."
+        basis="31 March 2026",
+    ),
+    GoldRequirement(
+        university_short_name="Edinburgh",
+        program_name="MSc Artificial Intelligence",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.PREREQUISITE_COURSES,
+        text_list_value=(
+            "Competence in programming is essential. During your degree you must have completed a programming course in at least one of the following: C/C++, Java, Python, R, Matlab, Haskell, ML.",
         ),
+        source_url="https://study.ed.ac.uk/programmes/postgraduate-taught/107-artificial-intelligence",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="Competence in programming is essential. During your degree you must have completed a programming course in at least one of the following: C/C++, Java, Python, R, Matlab, Haskell, ML.",
+    ),
+    # ---- Imperial · MSc Computing (Artificial Intelligence and Machine Learning) ----
+    GoldRequirement(
+        university_short_name="Imperial",
+        program_name="MSc Computing (Artificial Intelligence and Machine Learning)",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TUITION,
+        money_amount=Decimal("46000"),
+        money_currency="GBP",
+        source_url="https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-msc/",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="£46,000 \nOverseas",
+    ),
+    GoldRequirement(
+        university_short_name="Imperial",
+        program_name="MSc Computing (Artificial Intelligence and Machine Learning)",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.DEGREE_BACKGROUND,
+        text_value="First-class Honours in a subject with a substantial Computing component. This applies to applicants holding or working towards a UK qualification; international qualifications are also accepted (standards listed are the minimum for entry to Imperial, not specifically this Department).",
+        source_url="https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-msc/",
+        source_type=EvidenceSourceType.PROGRAM_PAGE,
+        basis="First-class Honours\n in a subject with a substantial Computing component.",
+    ),
+    GoldRequirement(
+        university_short_name="Imperial",
+        program_name="MSc Computing (Artificial Intelligence and Machine Learning)",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("7.0"),
+        source_url="https://www.imperial.ac.uk/study/apply/english-language/",
+        source_type=EvidenceSourceType.UNIVERSITY_ENGLISH_REQUIREMENT,
+        basis="7.0 overall (minimum 6.5 in all elements)",
+    ),
+    GoldRequirement(
+        university_short_name="Imperial",
+        program_name="MSc Computing (Artificial Intelligence and Machine Learning)",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_MIN_BAND,
+        numeric_value=Decimal("6.5"),
+        source_url="https://www.imperial.ac.uk/study/apply/english-language/",
+        source_type=EvidenceSourceType.UNIVERSITY_ENGLISH_REQUIREMENT,
+        basis="7.0 overall (minimum 6.5 in all elements)",
+    ),
+    GoldRequirement(
+        university_short_name="Imperial",
+        program_name="MSc Computing (Artificial Intelligence and Machine Learning)",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("100"),
+        source_url="https://www.imperial.ac.uk/study/apply/english-language/",
+        source_type=EvidenceSourceType.UNIVERSITY_ENGLISH_REQUIREMENT,
+        basis="100 overall (minimum 22 in all elements)",
+    ),
+    # ---- CUHK · MSc Computer Science ----
+    GoldRequirement(
+        university_short_name="CUHK",
+        program_name="MSc Computer Science",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.DEGREE_BACKGROUND,
+        text_value="Applicants must have: (1) graduated from a recognized university with a Bachelor's degree in Computer Science, Computer Engineering or related fields, normally with second class honours or higher, or an average grade of 'B' or better in undergraduate courses; or (2) completed tertiary study and obtained professional or similar qualifications equivalent to an honours degree; or (3) graduated with a first degree in other fields but having extensive computer-related content. Degrees by distance learning or short-duration curricula may require an HKCAAVQ assessment report.",
+        source_url="https://msc.cse.cuhk.edu.hk/?page_id=136&lang=en",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="Graduated from a recognized university and obtained a Bachelor’s degree in Computer Science, Computer Engineering or related fields, normally with second class honours or higher, or an average grade of “B” or better in undergraduate courses; or Completed a course of study in tertiary educational institutes and obtained professional or similar qualifications equivalent to an honours degree; or Graduated with a first degree in other fields but having extensive computer-related content;",
+    ),
+    GoldRequirement(
+        university_short_name="CUHK",
+        program_name="MSc Computer Science",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.IELTS_OVERALL,
+        numeric_value=Decimal("6.5"),
+        source_url="https://msc.cse.cuhk.edu.hk/?page_id=142&lang=en",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="IELTS (Academic Module): overall result of at least 6.5",
+    ),
+    GoldRequirement(
+        university_short_name="CUHK",
+        program_name="MSc Computer Science",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TOEFL_OVERALL,
+        numeric_value=Decimal("79"),
+        source_url="https://msc.cse.cuhk.edu.hk/?page_id=142&lang=en",
+        source_type=EvidenceSourceType.ADMISSION_PAGE,
+        basis="TOEFL: total score of at least 79 (internet-based) or 550 (paper-based)",
+    ),
+    GoldRequirement(
+        university_short_name="CUHK",
+        program_name="MSc Computer Science",
+        application_cycle="2026/27",
+        field_name=RequirementFieldName.TUITION,
+        money_amount=Decimal("264000"),
+        money_currency="HKD",
+        source_url="https://msc.cse.cuhk.edu.hk/?page_id=124&lang=en",
+        source_type=EvidenceSourceType.FEES_PAGE,
+        basis="Total: HK$228,800 (part-time) HK$264,000 (full-time)",
     ),
 )
 

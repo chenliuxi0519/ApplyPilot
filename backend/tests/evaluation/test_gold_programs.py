@@ -17,6 +17,7 @@ from app.modules.programs.models import (
     RequirementValueType,
 )
 from app.modules.programs.seed import PROGRAMS, UNIVERSITIES, seed_program_catalog
+from app.research.sources import OFFICIAL_SOURCES
 
 _SLOTS = {
     RequirementValueType.NUMERIC: ("numeric_value",),
@@ -28,8 +29,9 @@ _SLOTS = {
 _ALL_SLOTS = tuple(slot for slots in _SLOTS.values() for slot in slots)
 
 
-def test_there_is_gold_data_for_five_to_eight_programs() -> None:
-    assert 5 <= len(gold_programs()) <= 8
+def test_gold_data_covers_every_program_with_a_registered_official_source() -> None:
+    """按需读取与 gold 数据来自同一批官方页面，两边应始终一致。"""
+    assert set(gold_programs()) == set(OFFICIAL_SOURCES)
 
 
 def test_every_source_is_the_university_itself() -> None:

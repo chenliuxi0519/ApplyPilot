@@ -168,27 +168,27 @@ def test_cli_runs_a_single_case(capsys: pytest.CaptureFixture[str]) -> None:
     code = run_cli.main(["--case-id", "profile_read_001"])
     assert code == run_cli.EXIT_OK
     output = capsys.readouterr().out
-    assert "DETERMINISTIC RUNTIME EVALUATION" in output
-    assert "Cases: 1" in output
-    assert "Tool Selection Accuracy" not in output
+    assert "确定性运行评测" in output
+    assert "用例：1" in output
+    assert "工具选择准确率" not in output
 
 
 def test_cli_runs_a_category(capsys: pytest.CaptureFixture[str]) -> None:
     code = run_cli.main(["--category", Category.HITL.value])
     assert code == run_cli.EXIT_OK
-    assert f"Cases: {len(cases(category=Category.HITL))}" in capsys.readouterr().out
+    assert f"用例：{len(cases(category=Category.HITL))}" in capsys.readouterr().out
 
 
 def test_cli_reports_an_empty_selection(capsys: pytest.CaptureFixture[str]) -> None:
     assert run_cli.main(["--case-id", str(uuid.uuid4())]) == run_cli.EXIT_UNAVAILABLE
-    assert "No cases matched" in capsys.readouterr().out
+    assert "没有符合筛选条件的用例" in capsys.readouterr().out
 
 
 def test_cli_can_list_without_touching_the_database(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert run_cli.main(["--list"]) == run_cli.EXIT_OK
-    assert "cases" in capsys.readouterr().out
+    assert "个用例" in capsys.readouterr().out
 
 
 def test_cli_writes_json(tmp_path) -> None:

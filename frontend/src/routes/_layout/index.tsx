@@ -10,7 +10,7 @@ import {
   MessageSquareText,
 } from "lucide-react"
 
-import { ApplicationsService, ProfileService, ProgramsService } from "@/client"
+import { ApplicationsService, ProgramsService } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +26,7 @@ import {
   programTitle,
 } from "@/features/programs/presentation"
 import useAuth from "@/hooks/useAuth"
+import { useProfile } from "@/hooks/useProfile"
 
 const dashboardTaskLabels: Record<string, string> = {
   // 兼容中文化前已经写入数据库的系统任务标题。
@@ -46,11 +47,7 @@ export const Route = createFileRoute("/_layout/")({
 
 function Dashboard() {
   const { user } = useAuth()
-  const profile = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => ProfileService.readProfileMe(),
-    retry: false,
-  })
+  const profile = useProfile()
   const applications = useQuery({
     queryKey: ["applications"],
     queryFn: () => ApplicationsService.listApplications({ limit: 200 }),

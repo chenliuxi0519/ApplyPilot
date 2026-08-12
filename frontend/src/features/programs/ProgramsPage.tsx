@@ -4,14 +4,21 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import { ExternalLink, FileSearch, Plus, Scale, Search, X } from "lucide-react"
-import { useState } from "react"
+import {
+  ExternalLink,
+  FileSearch,
+  ListChecks,
+  Plus,
+  Scale,
+  Search,
+  X,
+} from "lucide-react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import {
   ApplicationsService,
   type EvidencePublic,
-  ProfileService,
   ProgramsService,
   type ProgramWithUniversityPublic,
   type RequirementPublic,
@@ -41,23 +48,20 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { useProfile } from "@/hooks/useProfile"
 import {
   assessProgram,
   evidenceStatusLabels,
+  formatComparisonValue,
   formatRequirementValue,
   matchGroupLabels,
   programTitle,
   regionLabels,
   requirementLabels,
 } from "./presentation"
+
+/** 稳定的空数组引用，避免每次渲染都产生新对象而让下游 memo 失效。 */
+const EMPTY_REQUIREMENTS: RequirementPublic[] = []
 
 export function ProgramsPage() {
   const queryClient = useQueryClient()
@@ -67,6 +71,8 @@ export function ProgramsPage() {
   const [cycle, setCycle] = useState("2026/27")
   const [selected, setSelected] = useState<ProgramWithUniversityPublic[]>([])
   const [evidenceProgram, setEvidenceProgram] =
+    useState<ProgramWithUniversityPublic | null>(null)
+  const [detailProgram, setDetailProgram] =
     useState<ProgramWithUniversityPublic | null>(null)
 
   const programs = useQuery({
@@ -81,11 +87,7 @@ export function ProgramsPage() {
         limit: 100,
       }),
   })
-  const profile = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => ProfileService.readProfileMe(),
-    retry: false,
-  })
+  const profile = useProfile()
   const allRequirements = useQueries({
     queries: (programs.data?.data ?? []).map((program) => ({
       queryKey: ["requirements", program.id, cycle],
@@ -94,12 +96,19 @@ export function ProgramsPage() {
           programId: program.id,
           applicationCycle: cycle,
         }),
+      // 不设过期时间的话，每次重渲染都会重新请求，勾选对比时明显卡顿。
+      staleTime: 5 * 60_000,
     })),
   })
+  const requirementsById = useMemo(() => {
+    const map = new Map<string, RequirementPublic[]>()
+    ;(programs.data?.data ?? []).forEach((program, index) => {
+      map.set(program.id, allRequirements[index]?.data?.data ?? [])
+    })
+    return map
+  }, [programs.data, allRequirements])
   const requirementsFor = (programId: string) =>
-    allRequirements[
-      (programs.data?.data ?? []).findIndex((item) => item.id === programId)
-    ]?.data?.data ?? []
+    requirementsById.get(programId) ?? EMPTY_REQUIREMENTS
   const evidence = useQuery({
     queryKey: ["evidence", evidenceProgram?.id, cycle],
     queryFn: () =>
@@ -108,6 +117,15 @@ export function ProgramsPage() {
         applicationCycle: cycle,
       }),
     enabled: Boolean(evidenceProgram),
+  })
+  const detailEvidence = useQuery({
+    queryKey: ["evidence", detailProgram?.id, cycle],
+    queryFn: () =>
+      ProgramsService.readProgramEvidence({
+        programId: detailProgram!.id,
+        applicationCycle: cycle,
+      }),
+    enabled: Boolean(detailProgram),
   })
   const addApplication = useMutation({
     mutationFn: (programId: string) =>
@@ -130,6 +148,14 @@ export function ProgramsPage() {
           : [...current, program],
     )
   }
+
+  const selectedRequirements = useMemo(
+    () =>
+      selected.map(
+        (program) => requirementsById.get(program.id) ?? EMPTY_REQUIREMENTS,
+      ),
+    [selected, requirementsById],
+  )
 
   return (
     <div className="space-y-6">
@@ -184,7 +210,7 @@ export function ProgramsPage() {
       {selected.length > 0 && (
         <Comparison
           programs={selected}
-          requirements={selected.map((program) => requirementsFor(program.id))}
+          requirements={selectedRequirements}
           onRemove={toggleCompare}
         />
       )}
@@ -193,7 +219,10 @@ export function ProgramsPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xs text-[var(--text-muted)]">项目列表</h2>
           <span className="font-mono text-[11px] text-[var(--text-muted)]">
-            找到 {programs.data?.count ?? 0} 个项目 · 最多对比 3 个
+            找到 {programs.data?.count ?? 0} 个项目 ·{" "}
+            {selected.length > 0
+              ? `已选 ${selected.length}/3 个待对比`
+              : "最多对比 3 个"}
           </span>
         </div>
         {programs.isLoading ? (
@@ -204,29 +233,42 @@ export function ProgramsPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             {programs.data?.data.map((program) => {
               const checked = selected.some((item) => item.id === program.id)
+              const programRequirements = requirementsFor(program.id)
               const assessment = assessProgram(
                 profile.data,
-                requirementsFor(program.id),
+                programRequirements,
               )
               return (
                 <Card
                   key={program.id}
-                  className={`lift-card overflow-hidden rounded-[11px] transition-all duration-150 hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${checked ? "border-primary shadow-[0_0_0_1px_var(--primary)]" : ""}`}
+                  className={`lift-card overflow-hidden rounded-[11px] transition-colors duration-150 hover:border-primary hover:shadow-md ${
+                    checked
+                      ? "border-primary bg-[var(--primary-muted)]"
+                      : "bg-[var(--surface)]"
+                  }`}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <CardTitle>{program.name}</CardTitle>
+                      <button
+                        type="button"
+                        className="cursor-pointer text-left"
+                        onClick={() => setDetailProgram(program)}
+                      >
+                        <CardTitle className="hover:text-primary hover:underline">
+                          {program.name}
+                        </CardTitle>
                         <CardDescription className="mt-1">
                           {program.university.name}（
                           {program.university.short_name}）
                         </CardDescription>
-                      </div>
+                      </button>
                       <div className="flex flex-col items-end gap-2">
                         <Badge variant="secondary">
                           {regionLabels[program.university.region]}
                         </Badge>
-                        <Badge className={`fit-badge ${assessment.group === "reach" ? "fit-reach" : assessment.group === "target" ? "fit-match" : assessment.group === "safer" ? "fit-safe" : ""}`}>
+                        <Badge
+                          className={`fit-badge ${assessment.group === "reach" ? "fit-reach" : assessment.group === "target" ? "fit-match" : assessment.group === "safer" ? "fit-safe" : ""}`}
+                        >
                           {matchGroupLabels[assessment.group]}
                         </Badge>
                       </div>
@@ -244,9 +286,31 @@ export function ProgramsPage() {
                           {program.duration_months} 个月
                         </Badge>
                       )}
+                      {programRequirements.length > 0 ? (
+                        <Badge
+                          variant="outline"
+                          className="border-primary/50 text-primary"
+                        >
+                          {programRequirements.length} 项官方要求
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-[var(--text-muted)]"
+                        >
+                          暂无要求数据
+                        </Badge>
+                      )}
                     </div>
                     <MatchSummary assessment={assessment} />
                     <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setDetailProgram(program)}
+                      >
+                        <ListChecks />
+                        申请要求
+                      </Button>
                       <Button
                         variant={checked ? "secondary" : "outline"}
                         onClick={() => toggleCompare(program)}
@@ -278,6 +342,18 @@ export function ProgramsPage() {
         )}
       </section>
 
+      <RequirementsDrawer
+        program={detailProgram}
+        cycle={cycle}
+        requirements={detailProgram ? requirementsFor(detailProgram.id) : []}
+        evidence={detailEvidence.data?.data ?? []}
+        assessment={assessProgram(
+          profile.data,
+          detailProgram ? requirementsFor(detailProgram.id) : [],
+        )}
+        onOpenChange={(open) => !open && setDetailProgram(null)}
+      />
+
       <EvidenceDrawer
         program={evidenceProgram}
         evidence={evidence.data?.data ?? []}
@@ -285,6 +361,118 @@ export function ProgramsPage() {
         onOpenChange={(open) => !open && setEvidenceProgram(null)}
       />
     </div>
+  )
+}
+
+function RequirementsDrawer({
+  program,
+  cycle,
+  requirements,
+  evidence,
+  assessment,
+  onOpenChange,
+}: {
+  program: ProgramWithUniversityPublic | null
+  cycle: string
+  requirements: RequirementPublic[]
+  evidence: EvidencePublic[]
+  assessment: ReturnType<typeof assessProgram>
+  onOpenChange: (open: boolean) => void
+}) {
+  const sourceOf = (requirement: RequirementPublic) =>
+    evidence.find((item) => item.id === requirement.published_evidence_id)
+
+  return (
+    <Sheet open={Boolean(program)} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+        <SheetHeader>
+          <SheetTitle>{program?.name}</SheetTitle>
+          <SheetDescription>
+            {program?.university.name} · {cycle} 申请季
+          </SheetDescription>
+        </SheetHeader>
+        <div className="space-y-4 px-4 pb-6">
+          <div className="flex flex-wrap gap-2">
+            {program?.field_tags.map((tag) => (
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
+            ))}
+            {program?.duration_months ? (
+              <Badge variant="outline">{program.duration_months} 个月</Badge>
+            ) : null}
+            <Badge
+              className={`fit-badge ${assessment.group === "reach" ? "fit-reach" : assessment.group === "target" ? "fit-match" : assessment.group === "safer" ? "fit-safe" : ""}`}
+            >
+              {matchGroupLabels[assessment.group]}
+            </Badge>
+          </div>
+
+          <MatchSummary assessment={assessment} />
+
+          <div className="space-y-2">
+            <p className="text-xs text-[var(--text-muted)]">
+              申请要求（每项均可追溯到官网原始来源）
+            </p>
+            {requirements.length === 0 ? (
+              <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                该项目在 {cycle}{" "}
+                申请季暂无已发布的要求。你可以在智能助手中询问，
+                它会尝试实时读取学校官网。
+              </p>
+            ) : (
+              <ul className="divide-y rounded-lg border">
+                {requirements.map((item) => {
+                  const source = sourceOf(item)
+                  return (
+                    <li key={item.id} className="space-y-1.5 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-sm text-muted-foreground">
+                          {requirementLabels[item.field_name]}
+                        </span>
+                        {item.status === "conflict_pending" ? (
+                          <Badge variant="destructive">待核实</Badge>
+                        ) : (
+                          <Badge variant="secondary">已发布</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium">
+                        {formatRequirementValue(item)}
+                      </p>
+                      {source ? (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            采集于{" "}
+                            {new Date(source.captured_at).toLocaleDateString(
+                              "zh-CN",
+                            )}
+                          </span>
+                          <a
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                            href={source.source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            官网来源
+                            <ExternalLink className="size-3" />
+                          </a>
+                        </div>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+
+          {requirements.some((item) => item.status === "conflict_pending") ? (
+            <p className="rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-xs dark:border-amber-900/60 dark:bg-amber-950/20">
+              标「待核实」的项，是学校自己不同页面写的不一样，还没确认，先别当准信。
+            </p>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -321,6 +509,10 @@ function MatchSummary({
   )
 }
 
+const LABEL_COLUMN_DEFAULT = 108
+const LABEL_COLUMN_MIN = 72
+const PROGRAM_COLUMN_MIN = 96
+
 function Comparison({
   programs,
   requirements,
@@ -330,70 +522,195 @@ function Comparison({
   requirements: RequirementPublic[][]
   onRemove: (program: ProgramWithUniversityPublic) => void
 }) {
-  const fields = Array.from(
-    new Set(requirements.flat().map((item) => item.field_name)),
+  const fields = useMemo<RequirementPublic["field_name"][]>(
+    () => Array.from(new Set(requirements.flat().map((i) => i.field_name))),
+    [requirements],
   )
+  // 一条要求都没有的项目，对比表看起来会像什么都没比。
+  const withoutData = programs.filter((_, i) => requirements[i].length === 0)
+
+  const { gridTemplate, startResize } = useResizableColumns(programs.length)
+
+  const row = (key: string, label: string, values: (string | null)[]) => (
+    <div
+      key={key}
+      className="grid items-start border-t border-[var(--border-subtle)]"
+      style={{ gridTemplateColumns: gridTemplate }}
+    >
+      <div className="px-3 py-3 text-xs leading-relaxed text-[var(--text-muted)]">
+        {label}
+      </div>
+      {values.map((value, index) => (
+        <div
+          key={programs[index].id}
+          className={`min-w-0 px-3 py-3 text-sm leading-relaxed ${
+            value === null
+              ? "text-[var(--text-muted)]"
+              : "whitespace-pre-line break-words"
+          }`}
+        >
+          {value ?? "—"}
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <Card className="border-primary bg-[var(--primary-muted)]">
-      <CardHeader>
-        <CardTitle>项目对比</CardTitle>
-        <CardDescription>
-          所有数值均来自当前申请季的已发布要求。
-        </CardDescription>
+      <CardHeader className="pb-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <CardTitle>项目对比</CardTitle>
+          <CardDescription className="text-[11px]">
+            拖动表头之间的分隔线可调整列宽
+          </CardDescription>
+        </div>
+        {withoutData.length > 0 ? (
+          <p className="mt-2 rounded-md border border-amber-300/70 bg-amber-50/60 p-2.5 text-xs leading-relaxed dark:border-amber-900/60 dark:bg-amber-950/20">
+            {withoutData.map((program) => programTitle(program)).join("、")}
+            {withoutData.length === programs.length
+              ? " 尚未收录官方要求，因此下表只能比较地区。"
+              : " 尚未收录官方要求，其对应列为空。"}
+            可以在智能助手中直接询问这些项目，它会尝试实时读取学校官网。
+          </p>
+        ) : null}
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>对比项</TableHead>
-              {programs.map((program) => (
-                <TableHead key={program.id} className="min-w-56">
-                  <div className="flex items-center justify-between gap-2">
-                    <span>{programTitle(program)}</span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`移除 ${program.name}`}
-                      onClick={() => onRemove(program)}
-                    >
-                      <X />
-                    </Button>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>地区</TableCell>
-              {programs.map((program) => (
-                <TableCell key={program.id}>
-                  {regionLabels[program.university.region]}
-                </TableCell>
-              ))}
-            </TableRow>
-            {fields.map((field) => (
-              <TableRow key={field}>
-                <TableCell className="font-medium">
-                  {requirementLabels[field]}
-                </TableCell>
-                {requirements.map((items, index) => {
-                  const item = items.find(
-                    (candidate) => candidate.field_name === field,
-                  )
-                  return (
-                    <TableCell key={programs[index].id}>
-                      {item ? formatRequirementValue(item) : "暂无数据"}
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
+
+      <CardContent className="pt-0">
+        <div className="overflow-hidden rounded-lg border border-[var(--border-subtle)]">
+          <div
+            className="grid items-stretch"
+            style={{ gridTemplateColumns: gridTemplate }}
+          >
+            <div className="px-3 py-3 text-[11px] text-[var(--text-muted)]">
+              对比项
+            </div>
+            {programs.map((program, index) => (
+              <div key={program.id} className="relative min-w-0">
+                <div className="px-3 py-3 pr-8">
+                  <p
+                    className="text-sm font-medium leading-snug"
+                    title={program.name}
+                  >
+                    {program.name}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+                    {program.university.short_name}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`移除 ${program.name}`}
+                  onClick={() => onRemove(program)}
+                  className="absolute right-1.5 top-2 rounded p-0.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--primary-muted)] hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+                {index < programs.length - 1 ? (
+                  <button
+                    type="button"
+                    aria-label="调整列宽"
+                    onPointerDown={(event) => startResize(index, event)}
+                    className="absolute -right-1 top-0 h-full w-2 cursor-col-resize border-0 bg-transparent p-0 transition-colors hover:bg-primary/25"
+                  />
+                ) : null}
+                {index === 0 ? (
+                  <button
+                    type="button"
+                    aria-label="调整对比项列宽"
+                    onPointerDown={(event) => startResize(-1, event)}
+                    className="absolute -left-1 top-0 h-full w-2 cursor-col-resize border-0 bg-transparent p-0 transition-colors hover:bg-primary/25"
+                  />
+                ) : null}
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+
+          {row(
+            "region",
+            "地区",
+            programs.map((program) => regionLabels[program.university.region]),
+          )}
+          {fields.map((field) =>
+            row(
+              field,
+              requirementLabels[field],
+              requirements.map((items) => {
+                const item = items.find((c) => c.field_name === field)
+                return item ? formatComparisonValue(item) : null
+              }),
+            ),
+          )}
+        </div>
+        <p className="mt-2 text-[11px] text-[var(--text-muted)]">
+          数据来自当前申请季的已发布要求，「—」表示官网没写或还没收录
+        </p>
       </CardContent>
     </Card>
   )
+}
+
+/** 列宽以像素保存，第一列是标签列，其余对应各个项目。 */
+function useResizableColumns(programCount: number) {
+  const [labelWidth, setLabelWidth] = useState(LABEL_COLUMN_DEFAULT)
+  const [pixelWidths, setPixelWidths] = useState<number[] | null>(null)
+
+  // 增减项目时回到等分。
+  const [lastCount, setLastCount] = useState(programCount)
+  if (lastCount !== programCount) {
+    setLastCount(programCount)
+    setPixelWidths(null)
+  }
+
+  const gridTemplate =
+    pixelWidths === null
+      ? `${labelWidth}px repeat(${programCount}, minmax(0, 1fr))`
+      : `${labelWidth}px ${pixelWidths.map((width) => `${width}px`).join(" ")}`
+
+  const startResize = (
+    boundaryIndex: number,
+    event: React.PointerEvent<HTMLElement>,
+  ) => {
+    event.preventDefault()
+    const header = event.currentTarget.parentElement?.parentElement
+    if (!header) return
+
+    // 先把当前宽度固化成像素，才能精确增减。
+    const columns = Array.from(header.children).slice(1) as HTMLElement[]
+    const measured = columns.map(
+      (column) => column.getBoundingClientRect().width,
+    )
+    const startX = event.clientX
+    const startWidths = pixelWidths ?? measured
+    const startLabel = labelWidth
+
+    const move = (moveEvent: PointerEvent) => {
+      const delta = moveEvent.clientX - startX
+      if (boundaryIndex < 0) {
+        setLabelWidth(Math.max(LABEL_COLUMN_MIN, startLabel + delta))
+        return
+      }
+      const next = [...startWidths]
+      const left = startWidths[boundaryIndex]
+      const right = startWidths[boundaryIndex + 1]
+      if (right === undefined) return
+      const clamped = Math.max(
+        PROGRAM_COLUMN_MIN - left,
+        Math.min(right - PROGRAM_COLUMN_MIN, delta),
+      )
+      next[boundaryIndex] = left + clamped
+      next[boundaryIndex + 1] = right - clamped
+      setPixelWidths(next)
+    }
+
+    const stop = () => {
+      window.removeEventListener("pointermove", move)
+      window.removeEventListener("pointerup", stop)
+    }
+    window.addEventListener("pointermove", move)
+    window.addEventListener("pointerup", stop)
+  }
+
+  return { gridTemplate, startResize }
 }
 
 function EvidenceDrawer({

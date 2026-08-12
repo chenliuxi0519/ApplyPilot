@@ -14,15 +14,14 @@ from app.modules.profiles.schemas import UserProfilePublic, UserProfileUpdate
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 
-@router.get("/me", response_model=UserProfilePublic)
+@router.get("/me", response_model=UserProfilePublic | None)
 def read_profile_me(session: SessionDep, current_user: CurrentUser) -> Any:
-    try:
-        return service.get_profile_or_raise(
-            session=session,
-            user_id=current_user.id,
-        )
-    except service.ProfileNotFoundError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
+    """尚未建档时返回 null，而不是 404。
+
+    每个新用户在填写任何信息之前都处于这个状态，它是正常的空档案，不是错误；
+    用 404 表示会让前端把常规状态当成失败路径处理。
+    """
+    return service.get_profile(session=session, user_id=current_user.id)
 
 
 @router.patch("/me", response_model=UserProfilePublic)

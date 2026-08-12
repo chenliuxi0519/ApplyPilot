@@ -94,6 +94,18 @@ function Message({
       `把 ${program.university} ${program.name} 加入我的 2026/27 申请计划。`,
     )
 
+  // 确认后卡片消失，这条消息可能什么都不剩，别留个空气泡。
+  const hasContent =
+    message.trace.length > 0 ||
+    Boolean(message.text) ||
+    message.cards.length > 0 ||
+    message.confirmation !== null ||
+    message.decision !== null ||
+    message.status === "budget_exceeded" ||
+    message.status === "failed"
+
+  if (!hasContent) return null
+
   return (
     <div className="space-y-3 rounded-[2px_12px_12px_12px] border border-l-[3px] border-l-primary bg-[var(--surface)] p-4 shadow-sm">
       {message.trace.length > 0 ? (
@@ -159,6 +171,22 @@ function Message({
         />
       ) : null}
 
+      {message.decision ? (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {message.decision === "approved" ? (
+            <>
+              <Check className="size-3.5" />
+              你已确认，操作已执行。
+            </>
+          ) : (
+            <>
+              <X className="size-3.5" />
+              你已取消，未做任何更改。
+            </>
+          )}
+        </p>
+      ) : null}
+
       {message.status === "budget_exceeded" ? (
         <p className="text-xs text-muted-foreground">
           本次任务已达到最大执行步数，智能助手已停止。
@@ -194,7 +222,7 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
         </h1>
         <p className="max-w-md text-sm text-muted-foreground">
           你可以咨询项目和申请要求、建立选校清单，并在一个地方跟踪所有申请。
-          申请要求均来自学校官方来源。
+          申请要求都来自学校官网。
         </p>
       </div>
       <div className="flex flex-wrap justify-center gap-2">

@@ -2,7 +2,11 @@ import { useQueries, useQuery } from "@tanstack/react-query"
 import { ExternalLink, FileCheck2, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { ProgramsService } from "@/client"
+import {
+  type EvidencePublic,
+  ProgramsService,
+  type ProgramWithUniversityPublic,
+} from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   evidenceStatusLabels,
@@ -21,10 +32,16 @@ import {
   requirementLabels,
 } from "./presentation"
 
+type EvidenceRow = {
+  evidence: EvidencePublic
+  program: ProgramWithUniversityPublic
+}
+
 export function EvidencePage() {
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState("all")
   const [cycle, setCycle] = useState("2026/27")
+  const [detail, setDetail] = useState<EvidenceRow | null>(null)
   const programs = useQuery({
     queryKey: ["programs", "evidence-index"],
     queryFn: () => ProgramsService.searchPrograms({ limit: 200 }),
@@ -50,11 +67,19 @@ export function EvidencePage() {
         )
         .filter(({ evidence, program }) => {
           const needle = query.trim().toLocaleLowerCase()
-          const matchesQuery =
-            !needle ||
-            `${program.name} ${program.university.name} ${requirementLabels[evidence.field_name]}`
-              .toLocaleLowerCase()
-              .includes(needle)
+          // 学校简称（HKU、NTU）也要能搜到。
+          const haystack = [
+            program.name,
+            program.university.name,
+            program.university.short_name,
+            requirementLabels[evidence.field_name],
+            formatRequirementValue(evidence),
+            evidence.source_url,
+            ...program.field_tags,
+          ]
+            .join(" ")
+            .toLocaleLowerCase()
+          const matchesQuery = !needle || haystack.includes(needle)
           return (
             matchesQuery && (status === "all" || evidence.status === status)
           )
@@ -125,8 +150,15 @@ export function EvidencePage() {
         </div>
       ) : (
         <div className="grid gap-3">
+          <p className="font-mono text-[11px] text-[var(--text-muted)]">
+            共 {rows.length} 条证据 · 点击任意一条查看完整信息
+          </p>
           {rows.map(({ evidence, program }) => (
-            <Card key={evidence.id} className="gap-3 py-4">
+            <Card
+              key={evidence.id}
+              className="cursor-pointer gap-3 py-4 transition-colors hover:border-primary"
+              onClick={() => setDetail({ evidence, program })}
+            >
               <CardContent className="grid gap-3 px-4 md:grid-cols-[1.2fr_1fr_auto] md:items-center">
                 <div>
                   <p className="font-medium">{programTitle(program)}</p>
@@ -157,6 +189,7 @@ export function EvidencePage() {
                     href={evidence.source_url}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={(event) => event.stopPropagation()}
                   >
                     官网
                     <ExternalLink className="size-3" />
@@ -167,6 +200,75 @@ export function EvidencePage() {
           ))}
         </div>
       )}
+
+      <Sheet
+        open={detail !== null}
+        onOpenChange={(open) => !open && setDetail(null)}
+      >
+        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+          <SheetHeader>
+            <SheetTitle>
+              {detail ? requirementLabels[detail.evidence.field_name] : ""}
+            </SheetTitle>
+            <SheetDescription>
+              {detail ? programTitle(detail.program) : ""}
+            </SheetDescription>
+          </SheetHeader>
+          {detail ? (
+            <div className="space-y-4 px-4 pb-6">
+              <div className="rounded-lg border p-4">
+                <p className="text-xs text-[var(--text-muted)]">采集到的数值</p>
+                <p className="mt-1 text-lg font-medium">
+                  {formatRequirementValue(detail.evidence)}
+                </p>
+              </div>
+
+              <dl className="divide-y rounded-lg border text-sm">
+                {[
+                  ["验证状态", evidenceStatusLabels[detail.evidence.status]],
+                  ["申请季", detail.evidence.application_cycle],
+                  ["来源类型", sourceTypeLabel(detail.evidence.source_type)],
+                  [
+                    "采集时间",
+                    new Date(detail.evidence.captured_at).toLocaleString(
+                      "zh-CN",
+                    ),
+                  ],
+                  ["所属学校", detail.program.university.name],
+                  ["项目", detail.program.name],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-start justify-between gap-4 px-3 py-2"
+                  >
+                    <dt className="shrink-0 text-muted-foreground">{label}</dt>
+                    <dd className="text-right">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              <div className="space-y-1.5">
+                <p className="text-xs text-[var(--text-muted)]">官网来源地址</p>
+                <a
+                  className="inline-flex items-start gap-1 break-all text-sm text-primary hover:underline"
+                  href={detail.evidence.source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {detail.evidence.source_url}
+                  <ExternalLink className="mt-0.5 size-3 shrink-0" />
+                </a>
+              </div>
+
+              {detail.evidence.status === "conflicted" ? (
+                <p className="rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-xs dark:border-amber-900/60 dark:bg-amber-950/20">
+                  这条和当前已发布的值对不上，正在等人工复核，先别当准信。
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

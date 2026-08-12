@@ -152,34 +152,134 @@
 }
 
 @layer base {
-  * { @apply border-border outline-ring/50; }
-  html { background: var(--bg); }
-  body { @apply bg-background text-foreground; font-family: "Outfit", sans-serif; }
-  h1, h2, .display-font { font-family: "DM Serif Display", serif; font-weight: 400; }
-  input[inputmode="decimal"], input[inputmode="numeric"], time, .mono-data { font-family: "JetBrains Mono", monospace; }
-  button, [role="button"] { cursor: pointer; }
-  button, a, input, textarea, select, [role="button"] { transition: all 0.2s ease; }
-  * { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-  *:hover { scrollbar-color: var(--border) transparent; }
-  *::-webkit-scrollbar { width: 4px; height: 4px; }
-  *::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
-  *:hover::-webkit-scrollbar-thumb { background: var(--border); }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    background: var(--bg);
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Outfit", sans-serif;
+  }
+  h1,
+  h2,
+  .display-font {
+    font-family: "DM Serif Display", serif;
+    font-weight: 400;
+  }
+  input[inputmode="decimal"],
+  input[inputmode="numeric"],
+  time,
+  .mono-data {
+    font-family: "JetBrains Mono", monospace;
+  }
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role="button"] {
+    transition: all 0.2s ease;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover {
+    scrollbar-color: var(--border) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+  }
+  *:hover::-webkit-scrollbar-thumb {
+    background: var(--border);
+  }
 }
 
 @layer components {
-  .page-title { font-family: "DM Serif Display", serif; font-size: 30px; font-weight: 400; color: var(--text-primary); }
-  .page-subtitle { font-size: 13px; color: var(--text-muted); }
-  .fit-badge { border: 1px solid; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 500; }
-  .fit-reach { background: var(--fit-reach-bg); color: var(--fit-reach-text); border-color: var(--fit-reach-border); }
-  .fit-match { background: var(--fit-match-bg); color: var(--fit-match-text); border-color: var(--fit-match-border); }
-  .fit-safe { background: var(--fit-safe-bg); color: var(--fit-safe-text); border-color: var(--fit-safe-border); }
-  .section-card { overflow: hidden; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
-  .section-card [data-slot="card-header"] { border-bottom: 1px solid var(--border-subtle); padding: 18px 22px 14px; }
-  .section-card [data-slot="card-title"] { border-left: 3px solid var(--accent-brand); padding-left: 10px; font-family: "DM Serif Display", serif; font-size: 17px; font-weight: 400; }
-  .section-card [data-slot="card-description"] { padding-left: 13px; font-size: 12px; }
-  .section-card [data-slot="card-content"] { padding: 18px 22px; gap: 14px; }
-  .section-card input, .section-card textarea { border-radius: 7px; background: var(--bg); font-size: 13px; }
-  [data-theme="light"] .section-card input, [data-theme="light"] .section-card textarea { background: var(--surface); }
-  [data-theme="light"] .section-card, [data-theme="light"] .lift-card { box-shadow: 0 1px 6px rgba(0,0,0,.05); }
-  .metric { font-family: "JetBrains Mono", monospace; color: var(--mono-data); }
+  .page-title {
+    font-family: "DM Serif Display", serif;
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .fit-badge {
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .fit-reach {
+    background: var(--fit-reach-bg);
+    color: var(--fit-reach-text);
+    border-color: var(--fit-reach-border);
+  }
+  .fit-match {
+    background: var(--fit-match-bg);
+    color: var(--fit-match-text);
+    border-color: var(--fit-match-border);
+  }
+  .fit-safe {
+    background: var(--fit-safe-bg);
+    color: var(--fit-safe-text);
+    border-color: var(--fit-safe-border);
+  }
+  .section-card {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--surface);
+  }
+  .section-card [data-slot="card-header"] {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 18px 22px 14px;
+  }
+  .section-card [data-slot="card-title"] {
+    border-left: 3px solid var(--accent-brand);
+    padding-left: 10px;
+    font-family: "DM Serif Display", serif;
+    font-size: 17px;
+    font-weight: 400;
+  }
+  .section-card [data-slot="card-description"] {
+    padding-left: 13px;
+    font-size: 12px;
+  }
+  .section-card [data-slot="card-content"] {
+    padding: 18px 22px;
+    gap: 14px;
+  }
+  .section-card input,
+  .section-card textarea {
+    border-radius: 7px;
+    background: var(--bg);
+    font-size: 13px;
+  }
+  [data-theme="light"] .section-card input,
+  [data-theme="light"] .section-card textarea {
+    background: var(--surface);
+  }
+  [data-theme="light"] .section-card,
+  [data-theme="light"] .lift-card {
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  }
+  .metric {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--mono-data);
+  }
 }

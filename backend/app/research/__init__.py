@@ -1,7 +1,6 @@
-"""按需读取院校官方页面，供 Agent 在项目库没有已发布要求时使用。
+"""项目库查不到要求时，现场读取院校官网。
 
-该模块只读取官方域名下的公开页面，抽取结果不写入证据库；它回答的是
-"官网现在怎么写"，而不是"我们已核实的要求是什么"。
+只读官方域名，抽取结果直接回答用户，不写入证据库。
 """
 
 from app.research.extractor import ExtractedRequirement, extract_requirements

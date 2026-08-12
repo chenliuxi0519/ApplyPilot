@@ -72,6 +72,8 @@ export type ChatMessage =
       cards: AgentCard[]
       trace: ToolTracePublic[]
       confirmation: ConfirmationPublic | null
+      // 卡片消失后留个记录，说明用户确认还是取消了。
+      decision: "approved" | "rejected" | null
       runId: string
       status: AgentChatPublic["status"]
       error: string | null
@@ -236,6 +238,7 @@ export function toAssistantMessage(
     cards: toCards(response),
     trace: response.tool_trace ?? [],
     confirmation: response.confirmation ?? null,
+    decision: null,
     runId: response.run_id,
     status: response.status,
     error: response.error ?? null,
@@ -280,6 +283,7 @@ export function runsToMessages(runs: AgentRunPublic[]): ChatMessage[] {
         cards: [],
         trace: [],
         confirmation: null,
+        decision: null,
         runId: run.id,
         status: run.status,
         error: run.last_error_code,

@@ -69,9 +69,25 @@ export function formatRequirementValue(value: ValueSource) {
     return `${Number(value.money_amount).toLocaleString("zh-CN")} ${value.money_currency ?? ""}`.trim()
   }
   if (value.date_value) return value.date_value
-  if (value.numeric_value) return value.numeric_value
+  // 数据库里是定点小数，直接展示会得到 6.500 / 79.000 这种冗余写法。
+  if (value.numeric_value) return String(Number(value.numeric_value))
   if (value.text_list_value?.length) return value.text_list_value.join("、")
   return value.text_value || "暂未公布"
+}
+
+/** 招生要求常写成一长段并列条件，按分句拆行后并排对比才读得下去。 */
+export function formatComparisonValue(value: ValueSource) {
+  if (value.text_list_value?.length) return value.text_list_value.join("\n\n")
+
+  const formatted = formatRequirementValue(value)
+  if (value.text_value === null || value.text_value === undefined) {
+    return formatted
+  }
+  return formatted
+    .split(/(?<=[.;])\s+(?=[A-Z(（]|\(\d\)|or\b)/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join("\n")
 }
 
 export function programTitle(program: ProgramWithUniversityPublic) {

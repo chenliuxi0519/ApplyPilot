@@ -103,7 +103,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     )
 
     assert r.status_code == 200
-    assert r.json() == {"message": "Password updated successfully"}
+    assert r.json() == {"message": "密码修改成功"}
 
     db.refresh(user)
     verified, _ = verify_password(new_password, user.hashed_password)
@@ -123,7 +123,7 @@ def test_reset_password_invalid_token(
 
     assert "detail" in response
     assert r.status_code == 400
-    assert response["detail"] == "Invalid token"
+    assert response["detail"] == "重置链接无效或已过期"
 
 
 def test_login_with_bcrypt_password_upgrades_to_argon2(

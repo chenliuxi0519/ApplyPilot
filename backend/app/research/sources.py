@@ -1,7 +1,6 @@
-"""项目到官方页面的映射。
+"""项目到官方页面的映射，只登记验证过能稳定读取的 URL。
 
-只登记经过实际验证、可以稳定读取的官方 URL。没有登记的项目，Agent 会明确
-告知用户"暂无可读取的官方来源"，而不是去猜测网址或改用非官方站点。
+没登记的项目，Agent 会直接说读不到，不会去猜网址。
 """
 
 from dataclasses import dataclass
@@ -13,7 +12,7 @@ from app.modules.programs.models import EvidenceSourceType
 class OfficialSource:
     url: str
     source_type: EvidenceSourceType
-    # 多个项目共用的校级页面（语言要求、招生日程）标记出来，便于说明来源层级。
+    # 校级页面（语言要求、招生日程）会被同校多个项目共用。
     university_level: bool = False
 
 
@@ -77,6 +76,21 @@ OFFICIAL_SOURCES: dict[tuple[str, str], tuple[OfficialSource, ...]] = {
             EvidenceSourceType.PROGRAM_PAGE,
         ),
     ),
+    # CUHK 的 MSc CS 有独立站点，按 WordPress 的 page_id 分页组织。
+    ("CUHK", "MSc Computer Science"): (
+        OfficialSource(
+            "https://msc.cse.cuhk.edu.hk/?page_id=136&lang=en",
+            EvidenceSourceType.ADMISSION_PAGE,
+        ),
+        OfficialSource(
+            "https://msc.cse.cuhk.edu.hk/?page_id=142&lang=en",
+            EvidenceSourceType.ADMISSION_PAGE,
+        ),
+        OfficialSource(
+            "https://msc.cse.cuhk.edu.hk/?page_id=124&lang=en",
+            EvidenceSourceType.FEES_PAGE,
+        ),
+    ),
     ("HKU", "MSc Computer Science"): (
         OfficialSource(
             "https://master.cds.hku.hk/msccs/admission/application-details/",
@@ -103,7 +117,7 @@ OFFICIAL_SOURCES: dict[tuple[str, str], tuple[OfficialSource, ...]] = {
     ),
 }
 
-# 已知无法按需读取的项目，记录原因，避免反复尝试。
+# 抓不到的项目记下原因，重新加入目录时可以直接告诉用户。
 UNAVAILABLE_REASONS: dict[tuple[str, str], str] = {
     ("UCL", "MSc Machine Learning"): "UCL 官网拒绝程序访问（HTTP 403）",
     (

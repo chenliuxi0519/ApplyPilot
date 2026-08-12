@@ -1,16 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 
-import { ApplicationsService, ProfileService } from "@/client"
+import { ApplicationsService } from "@/client"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useProfile } from "@/hooks/useProfile"
 import { ApplicationList } from "./ApplicationList"
 import { ProfileSummary } from "./ProfileSummary"
 
 export function Workspace() {
-  const profile = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => ProfileService.readProfileMe(),
-    retry: false,
-  })
+  const profile = useProfile()
 
   const applications = useQuery({
     queryKey: ["applications"],

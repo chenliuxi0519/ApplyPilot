@@ -2,13 +2,13 @@ import ipaddress
 import re
 import socket
 from dataclasses import dataclass
+from html import unescape
 from urllib.parse import urlsplit
 
 import httpx
 
 from app.modules.columns import get_datetime_utc
 
-# 只读取这些域名下的页面。抓回来的内容是数据，不是指令。
 OFFICIAL_DOMAIN_SUFFIXES: tuple[str, ...] = (
     "nus.edu.sg",
     "ntu.edu.sg",
@@ -28,7 +28,7 @@ REQUEST_TIMEOUT_SECONDS = 20.0
 MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 MAX_REDIRECTS = 5
 
-# 学校官网普遍拒绝无标识的客户端，这里表明是常规浏览器请求，不做任何反爬绕过。
+# 不带 UA 的请求会被多数学校官网拒绝。
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -44,7 +44,7 @@ _BLANK_RE = re.compile(r"\n\s*\n+")
 
 
 class FetchError(RuntimeError):
-    """页面无法读取，调用方应据此告知用户而不是猜测内容。"""
+    """页面读不到。"""
 
 
 @dataclass(frozen=True)
@@ -78,14 +78,8 @@ def _reject_non_public_address(host: str) -> None:
 def html_to_text(html: str) -> str:
     without_scripts = _SCRIPT_RE.sub(" ", html)
     text = _TAG_RE.sub("\n", without_scripts)
-    text = (
-        text.replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&#39;", "'")
-        .replace("&quot;", '"')
-    )
+    # WordPress 之类的站点会把引号输出成 &#8217;，不解码会混进原文引用。
+    text = unescape(text).replace("\xa0", " ")
     text = re.sub(r"[ \t]+", " ", text)
     return _BLANK_RE.sub("\n\n", text).strip()
 

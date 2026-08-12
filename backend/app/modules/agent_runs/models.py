@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -74,7 +75,7 @@ class AgentRun(SQLModel, table=True):
         default=None,
         sa_column=Column("display_question", Text, nullable=True),
     )
-    response_payload: dict | None = Field(
+    response_payload: dict[str, Any] | None = Field(
         default=None,
         sa_column=Column("display_response", JSON, nullable=True),
     )

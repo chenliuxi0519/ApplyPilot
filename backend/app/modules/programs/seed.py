@@ -40,17 +40,12 @@ UNIVERSITIES: tuple[UniversitySeed, ...] = (
     UniversitySeed("CUHK", "The Chinese University of Hong Kong", Region.HONG_KONG),
     UniversitySeed("HKU", "The University of Hong Kong", Region.HONG_KONG),
     UniversitySeed("Imperial", "Imperial College London", Region.UNITED_KINGDOM),
-    UniversitySeed("UCL", "University College London", Region.UNITED_KINGDOM),
     UniversitySeed("Edinburgh", "The University of Edinburgh", Region.UNITED_KINGDOM),
-    UniversitySeed("Manchester", "The University of Manchester", Region.UNITED_KINGDOM),
-    UniversitySeed("KCL", "King's College London", Region.UNITED_KINGDOM),
-    UniversitySeed("Warwick", "The University of Warwick", Region.UNITED_KINGDOM),
-    UniversitySeed("Southampton", "University of Southampton", Region.UNITED_KINGDOM),
 )
 
+# 只收录官网课程列表里能查到、且能读到申请要求的项目。
 PROGRAMS: tuple[ProgramSeed, ...] = (
     ProgramSeed("NUS", "Master of Computing in Artificial Intelligence", ("ai", "cs")),
-    ProgramSeed("NUS", "MSc Artificial Intelligence & Innovation", ("ai",)),
     ProgramSeed("NTU", "MSc Artificial Intelligence", ("ai",)),
     ProgramSeed(
         "NTU",
@@ -61,7 +56,6 @@ PROGRAMS: tuple[ProgramSeed, ...] = (
     ProgramSeed("HKUST", "MSc Artificial Intelligence", ("ai",)),
     ProgramSeed("HKUST", "MSc Information Technology", ("it", "cs")),
     ProgramSeed("HKUST", "MSc Big Data Technology", ("big_data", "data_science")),
-    ProgramSeed("CUHK", "MSc Artificial Intelligence", ("ai",)),
     ProgramSeed("CUHK", "MSc Computer Science", ("cs",)),
     ProgramSeed("HKU", "MSc Computer Science", ("cs",)),
     ProgramSeed(
@@ -69,18 +63,7 @@ PROGRAMS: tuple[ProgramSeed, ...] = (
         "MSc Computing (Artificial Intelligence and Machine Learning)",
         ("ai", "ml", "cs"),
     ),
-    ProgramSeed("UCL", "MSc Machine Learning", ("ml",)),
-    ProgramSeed("UCL", "MSc Data Science and Machine Learning", ("ml", "data_science")),
-    ProgramSeed("UCL", "MSc Computer Science", ("cs",)),
     ProgramSeed("Edinburgh", "MSc Artificial Intelligence", ("ai",)),
-    ProgramSeed("Edinburgh", "MSc Computer Science", ("cs",)),
-    ProgramSeed("Manchester", "MSc Artificial Intelligence", ("ai",)),
-    ProgramSeed("Manchester", "MSc Machine Learning", ("ml",)),
-    ProgramSeed("KCL", "MSc Artificial Intelligence", ("ai",)),
-    ProgramSeed("KCL", "MSc Advanced Computing", ("cs",)),
-    ProgramSeed("Warwick", "MSc Applied Artificial Intelligence", ("ai",)),
-    ProgramSeed("Southampton", "MSc Artificial Intelligence", ("ai",)),
-    ProgramSeed("Southampton", "MSc Machine Learning", ("ml",)),
 )
 
 

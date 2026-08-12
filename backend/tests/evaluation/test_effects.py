@@ -119,7 +119,7 @@ def test_profile_field_on_a_user_without_a_profile(db: Session) -> None:
     )
     result = _check(check, db, user.id)
     assert not result.passed
-    assert "no profile" in result.detail
+    assert "个人档案不存在" in result.detail
 
 
 def test_a_list_field_renders_as_a_comma_separated_value(db: Session) -> None:
