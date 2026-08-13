@@ -13,6 +13,9 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# AES 允许的密钥长度，与官方 EncryptedSerializer 的校验一致。
+AES_KEY_SIZES = (16, 24, 32)
+
 
 def parse_cors(v: Any) -> list[str] | str:
     if isinstance(v, str) and not v.startswith("["):
@@ -53,6 +56,10 @@ class Settings(BaseSettings):
     AGENT_API_KEY: str | None = None
     AGENT_MODEL: str = "deepseek-v4-flash"
 
+    # 新建运行用哪个引擎。恢复永远按运行自己记下的引擎走，不看这个开关，
+    # 所以切回 loop 之后，已经暂停的 graph 运行仍然能被批准。
+    AGENT_ENGINE: Literal["loop", "graph"] = "loop"
+
     def missing_agent_settings(self) -> tuple[str, ...]:
         return tuple(
             name
@@ -81,6 +88,52 @@ class Settings(BaseSettings):
             port=self.POSTGRES_PORT,
             path=self.POSTGRES_DB,
         )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def CHECKPOINT_DATABASE_URI(self) -> str:
+        """LangGraph checkpointer 用的连接串。
+
+        它直接走 psycopg，不认 SQLAlchemy 的 ``+psycopg`` 方言后缀，
+        所以在这里换掉 scheme，而不是改 SQLALCHEMY_DATABASE_URI——
+        后者被 alembic 和 core.db 依赖着。
+        """
+        return str(self.SQLALCHEMY_DATABASE_URI).replace(
+            "postgresql+psycopg://", "postgresql://", 1
+        )
+
+    # checkpoint 里会存下完整对话与工具结果，因此与 SECRET_KEY 分开管理：
+    # 两者轮换周期不同，泄露面也不同。必须是 16/24/32 字节。
+    CHECKPOINT_ENCRYPTION_KEY: str | None = None
+
+    @property
+    def checkpoint_is_configured(self) -> bool:
+        return bool(self.CHECKPOINT_ENCRYPTION_KEY)
+
+    @model_validator(mode="after")
+    def _enforce_checkpoint_encryption(self) -> Self:
+        """checkpoint 密钥的唯一判定点。
+
+        local 之外的环境一律要求配好密钥：checkpoint 存的是完整对话，
+        缺密钥必须在启动时就失败，而不是等到第一个 Graph 请求才发现。
+        local 允许不配（此时不会有任何 checkpoint 被写入），但只要配了，
+        长度就必须合法——不接受"配了一个用不了的值"这种中间状态。
+        """
+        key = self.CHECKPOINT_ENCRYPTION_KEY
+        if not key:
+            if self.ENVIRONMENT != "local":
+                raise ValueError(
+                    "CHECKPOINT_ENCRYPTION_KEY 未配置。checkpoint 会存下完整对话"
+                    "与工具结果，必须加密；请配置 16、24 或 32 字节的密钥。"
+                )
+            return self
+
+        size = len(key.encode("utf-8"))
+        if size not in AES_KEY_SIZES:
+            raise ValueError(
+                f"CHECKPOINT_ENCRYPTION_KEY 必须是 16、24 或 32 字节，当前为 {size}。"
+            )
+        return self
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False

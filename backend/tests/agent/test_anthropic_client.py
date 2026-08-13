@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from app.agent.anthropic_client import AnthropicModelClient
@@ -10,8 +11,22 @@ from tests.harness.conftest import EchoOutput
 
 
 class _Block:
+    """SDK content block 的替身。
+
+    真实的 block 是 pydantic 模型，适配层靠 model_dump 把它转成纯 dict，
+    所以替身也必须提供这个方法，否则测的就不是真实形状。
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         self.__dict__.update(kwargs)
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        exclude_none = kwargs.get("exclude_none", False)
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if not (exclude_none and value is None)
+        }
 
 
 class _Response:
@@ -112,13 +127,23 @@ def test_unknown_stop_reason_falls_back_to_other() -> None:
     )
 
 
-def test_assistant_message_replays_content_verbatim() -> None:
-    blocks = [_Block(type="text", text="hi")]
+def test_assistant_message_replays_content_as_plain_dicts() -> None:
+    """内容原样回放，但换成纯 dict：checkpoint 只能存 JSON，不能存 SDK 对象。"""
+    blocks = [
+        _Block(type="text", text="hi"),
+        _Block(type="tool_use", id="toolu_1", name="t", input={"a": 1}),
+    ]
     client, _ = _client(_Response(blocks, "end_turn"))
     response = client.complete(system="s", messages=[], tools=[])
 
+    content = response.assistant_message["content"]
     assert response.assistant_message["role"] == "assistant"
-    assert response.assistant_message["content"] is blocks
+    assert content == [
+        {"type": "text", "text": "hi"},
+        {"type": "tool_use", "id": "toolu_1", "name": "t", "input": {"a": 1}},
+    ]
+    assert all(isinstance(block, dict) for block in content)
+    assert json.loads(json.dumps(content)) == content
 
 
 def test_every_result_of_one_turn_goes_in_a_single_message() -> None:

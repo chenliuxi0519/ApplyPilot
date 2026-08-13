@@ -14,7 +14,9 @@ def test_case_ids_are_unique() -> None:
 
 
 def test_the_dataset_is_small_and_deliberate() -> None:
-    assert 30 <= len(DATASET) <= 50
+    # 上限从 50 放宽到 100：新增了 evidence 与 security 两组场景。
+    # 仍然设上限——用例要人工挑选，不是越多越好。
+    assert 30 <= len(DATASET) <= 100
 
 
 def test_every_expected_tool_exists() -> None:

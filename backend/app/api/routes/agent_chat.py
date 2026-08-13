@@ -2,9 +2,13 @@ import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from langgraph.types import Command
 from sqlmodel import Session, SQLModel
 
 from app.agent.anthropic_client import AgentNotConfiguredError, AnthropicModelClient
+from app.agent.budget import Budget
+from app.agent.checkpointer import get_checkpointer
+from app.agent.graph import AgentRuntimeContext, build_graph, new_state
 from app.agent.loop import AgentLoop, ResumeNotPendingError
 from app.agent.model import ModelClient
 from app.agent.session_store import (
@@ -15,6 +19,7 @@ from app.agent.session_store import (
 from app.agent.state import AgentState, AgentStatus, PendingConfirmation
 from app.agent.ui_events import UiEventCollector, build_ui_registry, trace_label
 from app.api.deps import CurrentUser, SessionDep
+from app.context import build_business_context
 from app.core.config import settings
 from app.core.db import engine
 from app.harness import ExecutionContext
@@ -105,7 +110,33 @@ def _build_loop(
         registry=build_ui_registry(collector, BUSINESS_TOOLS),
         session=session,
         execution=ExecutionContext(user_id=user.id, is_superuser=user.is_superuser),
-        recorder=PostgresRunRecorder(engine),
+        recorder=PostgresRunRecorder(engine, run_engine="loop"),
+    )
+
+
+def _thread_id(user_id: uuid.UUID, conversation_id: str) -> str:
+    """带上用户前缀，别人的 conversation_id 落不到我的命名空间里。"""
+    return f"{user_id}:{conversation_id}"
+
+
+def _graph_context(
+    session: Session,
+    user: User,
+    model: ModelClient,
+    collector: UiEventCollector,
+) -> AgentRuntimeContext:
+    return AgentRuntimeContext(
+        user_id=user.id,
+        is_superuser=user.is_superuser,
+        session=session,
+        model=model,
+        registry=build_ui_registry(collector, BUSINESS_TOOLS),
+        recorder=PostgresRunRecorder(engine, run_engine="graph"),
+        budget=Budget(),
+        # 每轮现读一次业务事实：档案和申请状态可能被上一轮的工具改过。
+        business_context=lambda: build_business_context(
+            session=session, user_id=user.id
+        ),
     )
 
 
@@ -231,6 +262,141 @@ def _respond(
     return response
 
 
+_graph: Any = None
+
+
+def _get_graph() -> Any:
+    """编译一次，之后复用；checkpointer 连接池也只建一次。"""
+    global _graph
+    if _graph is None:
+        _graph = build_graph(get_checkpointer())
+    return _graph
+
+
+def _respond_graph(
+    result: dict[str, Any],
+    *,
+    session: Session,
+    user: User,
+    conversation_id: str,
+    collector: UiEventCollector,
+    run_id: uuid.UUID,
+    user_message: str | None = None,
+) -> AgentChatPublic:
+    """把图的最终状态翻译成既有的响应结构，字段与 loop 路径完全一致。"""
+    interrupted = bool(result.get("__interrupt__"))
+    status = (
+        AgentStatus.WAITING_CONFIRMATION
+        if interrupted
+        else AgentStatus(result["status"])
+    )
+
+    confirmation: ConfirmationPublic | None = None
+    raw = result.get("pending_confirmation")
+    if status is AgentStatus.WAITING_CONFIRMATION and raw is not None:
+        pending = PendingConfirmation.from_dict(raw)
+        confirmation = ConfirmationPublic(
+            call_id=pending.call_id,
+            tool_name=pending.tool_name,
+            permission_level=pending.permission_level.value,
+            reason=pending.reason,
+            summary=_summary(session, user, pending),
+        )
+
+    error = result.get("last_error")
+    response = AgentChatPublic(
+        run_id=run_id,
+        conversation_id=conversation_id,
+        status=status,
+        answer=result.get("final_answer"),
+        confirmation=confirmation,
+        tool_trace=[
+            ToolTracePublic(
+                label=trace_label(event["tool_name"]),
+                status=event["tool_result_status"] or "ok",
+            )
+            for event in result.get("trace", [])
+            if event.get("tool_name") and event.get("tool_result_status")
+        ],
+        ui_events=[UiEventPublic(**event) for event in collector.as_dicts()],
+        steps=result.get("step_count", 0),
+        tool_calls=result.get("tool_call_count", 0),
+        error=None if error is None else error["code"],
+    )
+
+    with Session(engine) as history_session:
+        agent_run_service.save_run_presentation(
+            session=history_session,
+            user_id=user.id,
+            run_id=run_id,
+            conversation_id=conversation_id,
+            user_message=user_message,
+            response_payload=response.model_dump(mode="json"),
+        )
+    return response
+
+
+def _chat_graph(
+    session: Session,
+    current_user: User,
+    model: ModelClient,
+    message: str,
+    conversation_id: str,
+) -> AgentChatPublic:
+    run_id = uuid.uuid4()
+    collector = UiEventCollector()
+    context = _graph_context(session, current_user, model, collector)
+    context.recorder.start_run(AgentState(run_id=run_id, user_id=current_user.id))
+
+    result = _get_graph().invoke(
+        new_state(run_id, message, model),
+        config={
+            "configurable": {"thread_id": _thread_id(current_user.id, conversation_id)}
+        },
+        context=context,
+    )
+    return _respond_graph(
+        result,
+        session=session,
+        user=current_user,
+        conversation_id=conversation_id,
+        collector=collector,
+        run_id=run_id,
+        user_message=message,
+    )
+
+
+def _resume_graph(
+    run: Any,
+    approved: bool,
+    session: Session,
+    current_user: User,
+    model: ModelClient,
+) -> AgentChatPublic:
+    if run.status is not AgentStatus.WAITING_CONFIRMATION:
+        raise HTTPException(status_code=404, detail="没有找到该运行的待确认操作")
+
+    collector = UiEventCollector()
+    context = _graph_context(session, current_user, model, collector)
+    result = _get_graph().invoke(
+        Command(resume={"approved": approved}),
+        config={
+            "configurable": {
+                "thread_id": _thread_id(current_user.id, run.conversation_id or "")
+            }
+        },
+        context=context,
+    )
+    return _respond_graph(
+        result,
+        session=session,
+        user=current_user,
+        conversation_id=run.conversation_id or "",
+        collector=collector,
+        run_id=run.id,
+    )
+
+
 @router.post("/chat", response_model=AgentChatPublic)
 def chat(
     session: SessionDep,
@@ -244,6 +410,9 @@ def chat(
         raise HTTPException(status_code=422, detail="请输入消息内容")
 
     conversation_id = body.conversation_id or f"c-{uuid.uuid4().hex}"
+    if settings.AGENT_ENGINE == "graph":
+        return _chat_graph(session, current_user, model, message, conversation_id)
+
     collector = UiEventCollector()
     loop = _build_loop(session, current_user, model, collector)
 
@@ -272,6 +441,17 @@ def _resume(
     store: AgentSessionStore,
     model: ModelClient,
 ) -> AgentChatPublic:
+    # 恢复按运行自己记下的引擎走，不看当前默认开关：默认切回 loop 之后，
+    # 已经由 graph 创建并暂停的运行仍然必须能被批准。
+    try:
+        run = agent_run_service.get_run(
+            session=session, user_id=current_user.id, run_id=run_id
+        )
+    except agent_run_service.RunNotFoundError:
+        run = None
+    if run is not None and run.engine == "graph":
+        return _resume_graph(run, approved, session, current_user, model)
+
     try:
         pending = store.take_pending(run_id, user_id=current_user.id)
     except PendingRunNotFoundError as error:

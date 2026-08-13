@@ -7,11 +7,13 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Column,
     DateTime,
     Index,
     Integer,
+    String,
     Text,
     UniqueConstraint,
 )
@@ -49,6 +51,10 @@ class AgentRun(SQLModel, table=True):
             f"(finished_at IS NULL) = (status IN ({_OPEN_SQL}))",
             name="ck_agent_run_finished_at",
         ),
+        CheckConstraint(
+            "engine IS NULL OR engine IN ('loop', 'graph')",
+            name="ck_agent_run_engine",
+        ),
         Index("ix_agent_run_user_started", "user_id", "started_at"),
     )
 
@@ -68,6 +74,12 @@ class AgentRun(SQLModel, table=True):
     tool_call_count: int = Field(default=0, sa_column=Column(Integer, nullable=False))
     final_answer: str | None = Field(
         default=None, sa_column=Column(Text, nullable=True)
+    )
+
+    # 创建这次运行的执行引擎。恢复时按它路由，而不是按当前默认配置。
+    # 迁移之前的历史运行为 NULL，按 loop 处理。
+    engine: str | None = Field(
+        default=None, sa_column=Column("engine", String(16), nullable=True)
     )
 
     conversation_id: str | None = Field(default=None, max_length=96, index=True)
@@ -144,6 +156,20 @@ class AgentRunEvent(SQLModel, table=True):
         default=None, sa_column=Column(Integer, nullable=True)
     )
     final_status: str | None = Field(default=None, max_length=32)
+
+    # 上下文观测：只存数量，绝不存档案内容、消息原文或工具输出。
+    history_count: int | None = Field(
+        default=None, sa_column=Column(Integer, nullable=True)
+    )
+    estimated_tokens: int | None = Field(
+        default=None, sa_column=Column(Integer, nullable=True)
+    )
+    summarized: bool | None = Field(
+        default=None, sa_column=Column(Boolean, nullable=True)
+    )
+    profile_fields: int | None = Field(
+        default=None, sa_column=Column(Integer, nullable=True)
+    )
     created_at: datetime = Field(
         default_factory=get_datetime_utc,
         sa_column=Column(DateTime(timezone=True), nullable=False),

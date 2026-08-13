@@ -16,6 +16,8 @@ class Category(StrEnum):
     APPLICATION = "application"
     HITL = "hitl"
     ERROR_RECOVERY = "error_recovery"
+    EVIDENCE = "evidence"
+    SECURITY = "security"
 
 
 class ResumeDecision(StrEnum):

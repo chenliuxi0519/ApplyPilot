@@ -345,11 +345,14 @@ class AgentLoop:
             # 运行记录失败不能回滚已经完成的业务操作，但必须留下错误供排查。
             state.observability_failures += 1
             state.last_observability_error = str(error)
+            # 只记异常类型：数据库异常的 str() 会带上 SQL 与绑定参数，
+            # 而这些参数里可能有对话内容，不能进日志系统。
             logger.error(
                 "run %s: could not record execution history: %s",
                 state.run_id,
-                error,
+                type(error).__name__,
             )
+            logger.debug("run %s: recorder failure detail", state.run_id, exc_info=True)
 
     def _context_with(self, extra_approved: frozenset[str]) -> ExecutionContext:
         if not extra_approved:

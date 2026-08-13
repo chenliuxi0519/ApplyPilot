@@ -52,6 +52,9 @@ class RequirementSummary(SQLModel):
 
     status: RequirementStatus
 
+    # 引用这条要求时必须原样带上的证据标识。为空表示没有已发布证据，
+    # 此时不能把它当作有来源的事实陈述。
+    evidence_id: str | None = None
     source_url: str | None = None
     captured_at: str | None = None
 
@@ -136,6 +139,11 @@ def get_program_requirements(
                 application_cycle=requirement.application_cycle,
                 value=_format_value(requirement),
                 status=requirement.status,
+                evidence_id=(
+                    str(requirement.published_evidence_id)
+                    if requirement.published_evidence_id in evidence_by_id
+                    else None
+                ),
                 source_url=(
                     evidence_by_id[requirement.published_evidence_id].source_url
                     if requirement.published_evidence_id in evidence_by_id
