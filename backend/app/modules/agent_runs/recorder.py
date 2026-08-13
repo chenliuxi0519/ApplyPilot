@@ -10,9 +10,16 @@ from app.modules.columns import get_datetime_utc
 
 
 class PostgresRunRecorder:
-    def __init__(self, engine: Engine, *, store_final_answer: bool = True) -> None:
+    def __init__(
+        self,
+        engine: Engine,
+        *,
+        store_final_answer: bool = True,
+        run_engine: str | None = None,
+    ) -> None:
         self._engine = engine
         self._store_final_answer = store_final_answer
+        self._run_engine = run_engine
 
     def start_run(self, state: AgentState) -> None:
         now = get_datetime_utc()
@@ -22,6 +29,7 @@ class PostgresRunRecorder:
                     id=state.run_id,
                     user_id=state.user_id,
                     status=AgentStatus.RUNNING,
+                    engine=self._run_engine,
                     started_at=now,
                     created_at=now,
                     updated_at=now,
@@ -48,6 +56,10 @@ class PostgresRunRecorder:
                     error_code=event.error_code,
                     latency_ms=event.latency_ms,
                     final_status=event.final_status,
+                    history_count=event.history_count,
+                    estimated_tokens=event.estimated_tokens,
+                    summarized=event.summarized,
+                    profile_fields=event.profile_fields,
                 )
             )
             session.commit()

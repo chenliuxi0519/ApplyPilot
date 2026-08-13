@@ -24,6 +24,25 @@ class PendingConfirmation:
     reason: str
     arguments: dict[str, Any]
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "call_id": self.call_id,
+            "tool_name": self.tool_name,
+            "permission_level": self.permission_level.value,
+            "reason": self.reason,
+            "arguments": dict(self.arguments),
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "PendingConfirmation":
+        return cls(
+            call_id=payload["call_id"],
+            tool_name=payload["tool_name"],
+            permission_level=PermissionLevel(payload["permission_level"]),
+            reason=payload["reason"],
+            arguments=dict(payload["arguments"]),
+        )
+
 
 @dataclass(frozen=True)
 class PendingBatch:

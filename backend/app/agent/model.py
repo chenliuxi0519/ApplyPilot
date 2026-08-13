@@ -20,6 +20,17 @@ class ModelToolCall:
     name: str
     arguments: dict[str, Any]
 
+    def to_dict(self) -> dict[str, Any]:
+        return {"id": self.id, "name": self.name, "arguments": dict(self.arguments)}
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "ModelToolCall":
+        return cls(
+            id=payload["id"],
+            name=payload["name"],
+            arguments=dict(payload["arguments"]),
+        )
+
 
 @dataclass(frozen=True)
 class ModelResponse:

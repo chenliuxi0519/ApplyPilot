@@ -33,6 +33,12 @@ class TraceEvent:
 
     final_status: str | None = None
 
+    # 上下文观测：只记数量，不记内容。
+    history_count: int | None = None
+    estimated_tokens: int | None = None
+    summarized: bool | None = None
+    profile_fields: int | None = None
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "step": self.step,
@@ -48,4 +54,8 @@ class TraceEvent:
             "tool_result_status": self.tool_result_status,
             "error_code": None if self.error_code is None else self.error_code.value,
             "final_status": self.final_status,
+            "history_count": self.history_count,
+            "estimated_tokens": self.estimated_tokens,
+            "summarized": self.summarized,
+            "profile_fields": self.profile_fields,
         }

@@ -77,7 +77,10 @@ class AnthropicModelClient:
             ),
             text="\n".join(text_parts) if text_parts else None,
             tool_calls=tuple(tool_calls),
-            assistant_message={"role": "assistant", "content": response.content},
+            assistant_message={
+                "role": "assistant",
+                "content": _plain_blocks(response.content),
+            },
         )
 
     def user_message(self, text: str) -> Any:
@@ -96,6 +99,21 @@ class AnthropicModelClient:
                 for result in results
             ],
         }
+
+
+def _plain_blocks(content: Sequence[Any]) -> list[dict[str, Any]]:
+    """把 SDK 的 content block 转成纯 dict，供状态持久化后原样发回。
+
+    保留 provider 的字段名和结构，只去掉 SDK 对象外壳；exclude_none 让输出与
+    Anthropic 文档里的入参形状一致，避免把 SDK 补出来的空字段回传给接口。
+    """
+    blocks: list[dict[str, Any]] = []
+    for block in content:
+        if isinstance(block, dict):
+            blocks.append(dict(block))
+        else:
+            blocks.append(block.model_dump(mode="json", exclude_none=True))
+    return blocks
 
 
 def _required(name: str) -> str:

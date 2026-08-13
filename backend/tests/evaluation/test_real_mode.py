@@ -60,7 +60,7 @@ def test_the_cli_skips_real_mode_when_it_is_not_configured(
     code = run_cli.main(["--mode", "real"])
 
     assert code == run_cli.EXIT_UNAVAILABLE
-    assert "AGENT_API_KEY not set" in capsys.readouterr().out
+    assert "未配置 AGENT_API_KEY" in capsys.readouterr().out
 
     assert calls == []
 

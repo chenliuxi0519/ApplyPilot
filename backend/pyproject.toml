@@ -20,6 +20,12 @@ dependencies = [
     "pyjwt<3.0.0,>=2.13.0",
     "pwdlib[argon2,bcrypt]>=0.3.0",
     "anthropic>=0.69.0,<1.0.0",
+    # LangGraph 与 checkpointer 精确锁版本：checkpointer 自带内部表的迁移列表，
+    # 版本一变表结构就可能变，升级必须是一次显式、可验证的动作。
+    "langgraph==1.2.11",
+    "langgraph-checkpoint-postgres==3.1.2",
+    # 官方 EncryptedSerializer 的 AES 后端。
+    "pycryptodome>=3.20.0,<4.0.0",
 ]
 
 [dependency-groups]

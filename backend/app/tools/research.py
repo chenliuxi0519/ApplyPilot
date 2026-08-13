@@ -28,6 +28,9 @@ class ResearchProgramRequirementsInput(SQLModel):
 class ResearchedRequirement(SQLModel):
     field_name: RequirementFieldName
     value: str
+    # 现场抓取的数据没有入库，这里给一个本轮内稳定的标识供引用；
+    # live- 前缀提醒它未经人工复核。
+    evidence_id: str
     source_url: str
     source_quote: str
 
@@ -103,6 +106,7 @@ def research_program_requirements(
                 ResearchedRequirement(
                     field_name=requirement.field_name,
                     value=requirement.value_display,
+                    evidence_id=f"live-{payload.program_id}-{requirement.field_name}",
                     source_url=requirement.source_url,
                     source_quote=requirement.source_quote,
                 )
