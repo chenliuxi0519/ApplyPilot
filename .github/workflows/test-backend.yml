@@ -12,7 +12,8 @@ permissions:
 jobs:
   test-backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Agent 相关测试要真连数据库，套件跑满约需五分钟以上，原来的 5 分钟会被掐断。
+    timeout-minutes: 15
     steps:
       - name: 检出代码
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
