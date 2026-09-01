@@ -67,6 +67,71 @@ def _empty_profile_update(data: FixtureData) -> Sequence[Step]:
     return [calls(call("update_user_profile", {})), answer(DONE)]
 
 
+def _replace_campus_preference() -> Step:
+    return calls(
+        call(
+            "remember_user_preference",
+            {
+                "preference_key": "campus_environment",
+                "value": "必须有湖；海不是必要条件",
+                "raw_text": "以后只考虑有湖的学校，海可以不要",
+                "change_kind": "replace",
+            },
+        )
+    )
+
+
+@script("replace_campus_preference")
+def _replace_campus_preference_script(data: FixtureData) -> Sequence[Step]:
+    del data
+    return [_replace_campus_preference(), answer(DONE)]
+
+
+@script("remember_new_campus_preference")
+def _remember_new_campus_preference(data: FixtureData) -> Sequence[Step]:
+    del data
+    return [
+        calls(
+            call(
+                "remember_user_preference",
+                {
+                    "preference_key": "campus_environment",
+                    "value": "必须有湖",
+                    "raw_text": "以后只考虑有湖的学校",
+                    "change_kind": "new",
+                },
+            )
+        ),
+        answer(DONE),
+    ]
+
+
+@script("misdeclared_campus_preference")
+def _misdeclared_campus_preference(data: FixtureData) -> Sequence[Step]:
+    """槽位上已经有值，却声明成 new——必须被系统挡下来。"""
+    del data
+    return [
+        calls(
+            call(
+                "remember_user_preference",
+                {
+                    "preference_key": "campus_environment",
+                    "value": "必须有湖；海不是必要条件",
+                    "raw_text": "以后只考虑有湖的学校，海可以不要",
+                    "change_kind": "new",
+                },
+            )
+        ),
+        answer(DONE),
+    ]
+
+
+@script("temporary_preference_only")
+def _temporary_preference_only(data: FixtureData) -> Sequence[Step]:
+    del data
+    return [answer("好的，这次只看有湖的学校。")]
+
+
 PROFILE_CASES: tuple[EvaluationCase, ...] = (
     EvaluationCase(
         id="profile_read_001",
@@ -151,6 +216,77 @@ PROFILE_CASES: tuple[EvaluationCase, ...] = (
         expected_tools=frozenset({"update_user_profile"}),
         expected_error_codes=frozenset({ToolErrorCode.INVALID_INPUT}),
         notes="空更新应在进入权限判断和数据库会话前被参数校验拒绝。",
+    ),
+    EvaluationCase(
+        id="preference_persistent_008",
+        category=Category.PROFILE,
+        user_message="以后只考虑有湖的学校，帮我记住。",
+        setup="empty",
+        script="remember_new_campus_preference",
+        expected_tools=frozenset({"remember_user_preference"}),
+        expected_effect=EffectCheck(
+            kind=EffectKind.PREFERENCE_VALUE,
+            params={"key": "campus_environment", "value": "必须有湖"},
+        ),
+        real=True,
+        notes="槽位为空时第一次记录属于 new，不打扰用户。",
+    ),
+    EvaluationCase(
+        id="preference_temporary_009",
+        category=Category.PROFILE,
+        user_message="这次推荐时只看有湖的学校。",
+        setup="empty",
+        script="temporary_preference_only",
+        forbidden_tools=frozenset({"remember_user_preference"}),
+        expected_effect=NO_CHANGE,
+        real=True,
+        notes="本轮条件不得污染跨会话长期偏好。",
+    ),
+    EvaluationCase(
+        id="preference_replace_confirmed_010",
+        category=Category.PROFILE,
+        user_message="以后只考虑有湖的学校，海可以不要，帮我记住。",
+        setup="persistent_preference",
+        script="replace_campus_preference",
+        expected_tools=frozenset({"remember_user_preference"}),
+        expect_confirmation=True,
+        resume=ResumeDecision.APPROVE,
+        effect_at_pause=NO_CHANGE,
+        expected_effect=EffectCheck(
+            kind=EffectKind.PREFERENCE_VALUE,
+            params={"key": "campus_environment", "value": "必须有湖；海不是必要条件"},
+        ),
+        notes="推翻已生效的长期约束要先停下来问用户；确认前旧值不能被改动。",
+    ),
+    EvaluationCase(
+        id="preference_replace_rejected_011",
+        category=Category.PROFILE,
+        user_message="以后只考虑有湖的学校，海可以不要，帮我记住。",
+        setup="persistent_preference",
+        script="replace_campus_preference",
+        expected_tools=frozenset({"remember_user_preference"}),
+        expect_confirmation=True,
+        resume=ResumeDecision.REJECT,
+        effect_at_pause=NO_CHANGE,
+        expected_effect=EffectCheck(
+            kind=EffectKind.PREFERENCE_VALUE,
+            params={"key": "campus_environment", "value": "必须同时有湖和海"},
+        ),
+        notes="用户拒绝覆盖时，旧的长期约束必须原样保留。",
+    ),
+    EvaluationCase(
+        id="preference_misdeclared_012",
+        category=Category.ERROR_RECOVERY,
+        user_message="以后只考虑有湖的学校，海可以不要，帮我记住。",
+        setup="persistent_preference",
+        script="misdeclared_campus_preference",
+        expected_tools=frozenset({"remember_user_preference"}),
+        expected_error_codes=frozenset({ToolErrorCode.CONFLICT}),
+        expected_effect=EffectCheck(
+            kind=EffectKind.PREFERENCE_VALUE,
+            params={"key": "campus_environment", "value": "必须同时有湖和海"},
+        ),
+        notes="声明成 new 却已有生效值时必须被拒绝，旧约束不能被悄悄顶掉。",
     ),
 )
 

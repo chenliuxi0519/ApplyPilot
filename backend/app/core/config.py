@@ -56,10 +56,6 @@ class Settings(BaseSettings):
     AGENT_API_KEY: str | None = None
     AGENT_MODEL: str = "deepseek-v4-flash"
 
-    # 新建运行用哪个引擎。恢复永远按运行自己记下的引擎走，不看这个开关，
-    # 所以切回 loop 之后，已经暂停的 graph 运行仍然能被批准。
-    AGENT_ENGINE: Literal["loop", "graph"] = "loop"
-
     def missing_agent_settings(self) -> tuple[str, ...]:
         return tuple(
             name

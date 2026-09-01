@@ -78,6 +78,8 @@ def test_deterministic_metrics_on_a_clean_sweep() -> None:
     assert metrics.cases == 2
     assert metrics.passed == 2
     assert metrics.case_pass_rate.value == 1.0
+    assert metrics.common.clean_pass_rate.value == 1.0
+    assert metrics.common.warning_case_rate.value == 0.0
     assert metrics.harness_execution_accuracy.value == 1.0
     assert metrics.common.business_effect_accuracy.value == 1.0
     assert metrics.common.mean_steps == 2.0
@@ -108,7 +110,11 @@ def test_an_extra_read_does_not_lower_the_pass_rate() -> None:
             effects=(_passed(),),
         )
     ]
-    assert deterministic_metrics(outcomes).case_pass_rate.value == 1.0
+    metrics = deterministic_metrics(outcomes)
+    assert metrics.case_pass_rate.value == 1.0
+    assert metrics.common.clean_pass_rate.value == 0.0
+    assert metrics.common.warning_case_rate.value == 1.0
+    assert metrics.common.unnecessary_tool_case_rate.value == 1.0
 
 
 def test_a_non_fatal_observation_does_not_lower_any_accuracy_figure() -> None:

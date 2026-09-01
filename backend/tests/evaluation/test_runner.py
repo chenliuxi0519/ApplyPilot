@@ -10,7 +10,7 @@ from app.evaluation import run as run_cli
 from app.evaluation.case import NO_CHANGE, Category, EffectCheck, EffectKind
 from app.evaluation.dataset import cases
 from app.evaluation.runner import EVAL_EMAIL_PREFIX, Mode, run_case, run_cases
-from app.evaluation.scoring import FailureKind
+from app.evaluation.scoring import Failure, FailureKind
 from app.models import User
 
 
@@ -198,4 +198,23 @@ def test_cli_writes_json(tmp_path) -> None:
     run_cli.main(["--case-id", "profile_read_001", "--json", str(path)])
     payload = json.loads(path.read_text(encoding="utf-8"))
     assert payload["mode"] == Mode.DETERMINISTIC.value
+    assert payload["metadata"]["runtime"] == "langgraph"
+    assert payload["metadata"]["prompt_hash"]
+    assert payload["summary"]["clean_pass_rate"] == 1.0
     assert payload["cases"][0]["id"] == "profile_read_001"
+
+
+def test_cli_can_treat_warnings_as_a_failed_regression_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clean = run_case(_case("profile_read_001"), engine=engine).outcome
+    warned = dataclasses.replace(
+        clean,
+        failures=(Failure(FailureKind.UNNECESSARY_TOOL, "extra", fatal=False),),
+    )
+    monkeypatch.setattr(run_cli, "run_cases", lambda *args, **kwargs: [warned])
+
+    assert (
+        run_cli.main(["--case-id", "profile_read_001", "--require-clean"])
+        == run_cli.EXIT_FAILED
+    )

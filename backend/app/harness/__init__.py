@@ -12,6 +12,7 @@ from app.harness.errors import (
 )
 from app.harness.executor import execute_tool
 from app.harness.guard import RESERVED_ARGUMENT_NAMES, validate_tool_call
+from app.harness.idempotency import ToolExecution, ToolExecutionStatus, build_key
 from app.harness.models import (
     ExecutionContext,
     PermissionLevel,
@@ -44,12 +45,15 @@ __all__ = [
     "ToolDefinition",
     "ToolError",
     "ToolErrorCode",
+    "ToolExecution",
     "ToolExecutionError",
+    "ToolExecutionStatus",
     "ToolHandler",
     "ToolRegistry",
     "ToolResult",
     "UnknownToolError",
     "UserRejectedError",
+    "build_key",
     "decide",
     "error_result",
     "execute_tool",

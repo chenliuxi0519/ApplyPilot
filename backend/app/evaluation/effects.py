@@ -6,6 +6,7 @@ from sqlmodel import Session, col, select
 
 from app.evaluation.case import EffectCheck, EffectKind
 from app.modules.applications.models import Application, ApplicationTask
+from app.modules.preferences import PreferenceStatus, UserPreference
 from app.modules.profiles.models import UserProfile
 
 Fingerprint = tuple[tuple[str, ...], ...]
@@ -31,6 +32,20 @@ def fingerprint(session: Session, user_id: uuid.UUID) -> Fingerprint:
     ).one_or_none()
     if profile is not None:
         rows.append(("profile", str(profile.id), profile.updated_at.isoformat()))
+
+    preferences = session.exec(
+        select(UserPreference).where(col(UserPreference.user_id) == user_id)
+    ).all()
+    for preference in sorted(preferences, key=lambda row: str(row.id)):
+        rows.append(
+            (
+                "preference",
+                str(preference.id),
+                preference.preference_key,
+                preference.value,
+                preference.status.value,
+            )
+        )
 
     applications = session.exec(
         select(Application).where(col(Application.user_id) == user_id)
@@ -77,6 +92,8 @@ def check_effect(
         return _application_status(check, session, user_id)
     if check.kind is EffectKind.TASK_STATUS:
         return _task_status(check, session, user_id)
+    if check.kind is EffectKind.PREFERENCE_VALUE:
+        return _preference_value(check, session, user_id)
     return _profile_field(check, session, user_id)
 
 
@@ -169,6 +186,27 @@ def _profile_field(
         check=check,
         passed=rendered == expected,
         detail=f"{field}: expected {expected!r}, found {rendered!r}",
+    )
+
+
+def _preference_value(
+    check: EffectCheck, session: Session, user_id: uuid.UUID
+) -> EffectResult:
+    key = str(check.params["key"])
+    expected = str(check.params["value"])
+    session.expire_all()
+    row = session.exec(
+        select(UserPreference).where(
+            col(UserPreference.user_id) == user_id,
+            col(UserPreference.preference_key) == key,
+            col(UserPreference.status) == PreferenceStatus.ACTIVE,
+        )
+    ).one_or_none()
+    actual = "" if row is None else row.value
+    return EffectResult(
+        check=check,
+        passed=actual == expected,
+        detail=f"{key}: expected {expected!r}, found {actual!r}",
     )
 
 

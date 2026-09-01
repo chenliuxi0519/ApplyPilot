@@ -7,22 +7,15 @@ from sqlmodel import Session, SQLModel
 
 from app.agent.anthropic_client import AgentNotConfiguredError, AnthropicModelClient
 from app.agent.budget import Budget
-from app.agent.checkpointer import get_checkpointer
+from app.agent.checkpointer import checkpoint_thread_id, get_checkpointer
 from app.agent.graph import AgentRuntimeContext, build_graph, new_state
-from app.agent.loop import AgentLoop, ResumeNotPendingError
 from app.agent.model import ModelClient
-from app.agent.session_store import (
-    AgentSessionStore,
-    PendingRunNotFoundError,
-    session_store,
-)
 from app.agent.state import AgentState, AgentStatus, PendingConfirmation
 from app.agent.ui_events import UiEventCollector, build_ui_registry, trace_label
 from app.api.deps import CurrentUser, SessionDep
 from app.context import build_business_context
 from app.core.config import settings
 from app.core.db import engine
-from app.harness import ExecutionContext
 from app.models import User
 from app.modules.agent_runs import service as agent_run_service
 from app.modules.agent_runs.recorder import PostgresRunRecorder
@@ -41,12 +34,7 @@ def get_model_client() -> ModelClient:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
-def get_session_store() -> AgentSessionStore:
-    return session_store
-
-
 ModelDep = Annotated[ModelClient, Depends(get_model_client)]
-StoreDep = Annotated[AgentSessionStore, Depends(get_session_store)]
 
 
 class AgentChatRequest(SQLModel):
@@ -102,21 +90,8 @@ class AgentChatPublic(SQLModel):
     error: str | None = None
 
 
-def _build_loop(
-    session: Session, user: User, model: ModelClient, collector: UiEventCollector
-) -> AgentLoop:
-    return AgentLoop(
-        model=model,
-        registry=build_ui_registry(collector, BUSINESS_TOOLS),
-        session=session,
-        execution=ExecutionContext(user_id=user.id, is_superuser=user.is_superuser),
-        recorder=PostgresRunRecorder(engine, run_engine="loop"),
-    )
-
-
 def _thread_id(user_id: uuid.UUID, conversation_id: str) -> str:
-    """带上用户前缀，别人的 conversation_id 落不到我的命名空间里。"""
-    return f"{user_id}:{conversation_id}"
+    return checkpoint_thread_id(user_id, conversation_id)
 
 
 def _graph_context(
@@ -200,68 +175,6 @@ def _summary(
     return summary
 
 
-def _respond(
-    state: AgentState,
-    *,
-    session: Session,
-    user: User,
-    conversation_id: str,
-    collector: UiEventCollector,
-    store: AgentSessionStore,
-    user_message: str | None = None,
-) -> AgentChatPublic:
-    confirmation: ConfirmationPublic | None = None
-    if state.status is AgentStatus.WAITING_CONFIRMATION:
-        pending = state.pending_confirmation
-        assert pending is not None
-
-        store.remember_pending(state, conversation_id=conversation_id)
-        confirmation = ConfirmationPublic(
-            call_id=pending.call_id,
-            tool_name=pending.tool_name,
-            permission_level=pending.permission_level.value,
-            reason=pending.reason,
-            summary=_summary(session, user, pending),
-        )
-    elif state.status is AgentStatus.COMPLETED:
-        store.remember_conversation(
-            conversation_id, messages=state.messages, user_id=user.id
-        )
-    else:
-        store.forget_conversation(conversation_id)
-
-    response = AgentChatPublic(
-        run_id=state.run_id,
-        conversation_id=conversation_id,
-        status=state.status,
-        answer=state.final_answer,
-        confirmation=confirmation,
-        tool_trace=[
-            ToolTracePublic(
-                label=trace_label(event.tool_name),
-                status=event.tool_result_status or "ok",
-            )
-            for event in state.trace
-            if event.tool_name is not None and event.tool_result_status is not None
-        ],
-        ui_events=[UiEventPublic(**event) for event in collector.as_dicts()],
-        steps=state.step_count,
-        tool_calls=state.tool_call_count,
-        error=None if state.last_error is None else state.last_error.code.value,
-    )
-
-    with Session(engine) as history_session:
-        agent_run_service.save_run_presentation(
-            session=history_session,
-            user_id=user.id,
-            run_id=state.run_id,
-            conversation_id=conversation_id,
-            user_message=user_message,
-            response_payload=response.model_dump(mode="json"),
-        )
-    return response
-
-
 _graph: Any = None
 
 
@@ -283,7 +196,7 @@ def _respond_graph(
     run_id: uuid.UUID,
     user_message: str | None = None,
 ) -> AgentChatPublic:
-    """把图的最终状态翻译成既有的响应结构，字段与 loop 路径完全一致。"""
+    """把图的最终状态翻译成前端响应结构。"""
     interrupted = bool(result.get("__interrupt__"))
     status = (
         AgentStatus.WAITING_CONFIRMATION
@@ -373,9 +286,6 @@ def _resume_graph(
     current_user: User,
     model: ModelClient,
 ) -> AgentChatPublic:
-    if run.status is not AgentStatus.WAITING_CONFIRMATION:
-        raise HTTPException(status_code=404, detail="没有找到该运行的待确认操作")
-
     collector = UiEventCollector()
     context = _graph_context(session, current_user, model, collector)
     result = _get_graph().invoke(
@@ -401,7 +311,6 @@ def _resume_graph(
 def chat(
     session: SessionDep,
     current_user: CurrentUser,
-    store: StoreDep,
     model: ModelDep,
     body: AgentChatRequest,
 ) -> AgentChatPublic:
@@ -410,26 +319,7 @@ def chat(
         raise HTTPException(status_code=422, detail="请输入消息内容")
 
     conversation_id = body.conversation_id or f"c-{uuid.uuid4().hex}"
-    if settings.AGENT_ENGINE == "graph":
-        return _chat_graph(session, current_user, model, message, conversation_id)
-
-    collector = UiEventCollector()
-    loop = _build_loop(session, current_user, model, collector)
-
-    state = AgentState.new(
-        user_id=current_user.id,
-        messages=store.conversation(conversation_id, user_id=current_user.id),
-    )
-    state = loop.run(state, message)
-    return _respond(
-        state,
-        session=session,
-        user=current_user,
-        conversation_id=conversation_id,
-        collector=collector,
-        store=store,
-        user_message=message,
-    )
+    return _chat_graph(session, current_user, model, message, conversation_id)
 
 
 def _resume(
@@ -438,41 +328,25 @@ def _resume(
     approved: bool,
     session: Session,
     current_user: User,
-    store: AgentSessionStore,
     model: ModelClient,
 ) -> AgentChatPublic:
-    # 恢复按运行自己记下的引擎走，不看当前默认开关：默认切回 loop 之后，
-    # 已经由 graph 创建并暂停的运行仍然必须能被批准。
     try:
         run = agent_run_service.get_run(
             session=session, user_id=current_user.id, run_id=run_id
         )
     except agent_run_service.RunNotFoundError:
-        run = None
-    if run is not None and run.engine == "graph":
+        raise HTTPException(status_code=404, detail="没有找到该运行") from None
+    if not agent_run_service.claim_waiting_run(
+        session=session, user_id=current_user.id, run_id=run_id
+    ):
+        raise HTTPException(status_code=404, detail="没有找到该运行的待确认操作")
+    try:
         return _resume_graph(run, approved, session, current_user, model)
-
-    try:
-        pending = store.take_pending(run_id, user_id=current_user.id)
-    except PendingRunNotFoundError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-    state = pending.state
-
-    collector = UiEventCollector()
-    loop = _build_loop(session, current_user, model, collector)
-    try:
-        state = loop.resume_approved(state) if approved else loop.resume_rejected(state)
-    except ResumeNotPendingError as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
-
-    return _respond(
-        state,
-        session=session,
-        user=current_user,
-        conversation_id=pending.conversation_id,
-        collector=collector,
-        store=store,
-    )
+    except Exception:
+        agent_run_service.restore_waiting_run(
+            session=session, user_id=current_user.id, run_id=run_id
+        )
+        raise
 
 
 @router.post("/runs/{run_id}/approve", response_model=AgentChatPublic)
@@ -480,7 +354,6 @@ def approve(
     run_id: uuid.UUID,
     session: SessionDep,
     current_user: CurrentUser,
-    store: StoreDep,
     model: ModelDep,
 ) -> AgentChatPublic:
     return _resume(
@@ -488,7 +361,6 @@ def approve(
         approved=True,
         session=session,
         current_user=current_user,
-        store=store,
         model=model,
     )
 
@@ -498,7 +370,6 @@ def reject(
     run_id: uuid.UUID,
     session: SessionDep,
     current_user: CurrentUser,
-    store: StoreDep,
     model: ModelDep,
 ) -> AgentChatPublic:
     return _resume(
@@ -506,7 +377,6 @@ def reject(
         approved=False,
         session=session,
         current_user=current_user,
-        store=store,
         model=model,
     )
 

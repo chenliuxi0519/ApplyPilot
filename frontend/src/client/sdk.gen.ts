@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AgentChatData, AgentChatResponse, AgentApproveData, AgentApproveResponse, AgentRejectData, AgentRejectResponse, AgentAgentConfigResponse, AgentRunsListRunsData, AgentRunsListRunsResponse, AgentRunsReadRunData, AgentRunsReadRunResponse, AgentRunsReadRunEventsData, AgentRunsReadRunEventsResponse, ApplicationsListApplicationsData, ApplicationsListApplicationsResponse, ApplicationsCreateApplicationData, ApplicationsCreateApplicationResponse, ApplicationsReadApplicationData, ApplicationsReadApplicationResponse, ApplicationsUpdateApplicationData, ApplicationsUpdateApplicationResponse, ApplicationsDeleteApplicationData, ApplicationsDeleteApplicationResponse, ApplicationsListApplicationTasksData, ApplicationsListApplicationTasksResponse, ApplicationsCreateApplicationTaskData, ApplicationsCreateApplicationTaskResponse, ApplicationTasksUpdateApplicationTaskData, ApplicationTasksUpdateApplicationTaskResponse, ApplicationTasksDeleteApplicationTaskData, ApplicationTasksDeleteApplicationTaskResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ProfileReadProfileMeResponse, ProfileUpdateProfileMeData, ProfileUpdateProfileMeResponse, ProgramsSearchProgramsData, ProgramsSearchProgramsResponse, ProgramsReadProgramData, ProgramsReadProgramResponse, ProgramsReadProgramRequirementsData, ProgramsReadProgramRequirementsResponse, ProgramsReadProgramEvidenceData, ProgramsReadProgramEvidenceResponse, ProgramsIngestProgramEvidenceData, ProgramsIngestProgramEvidenceResponse, RequirementsReadRequirementConflictsData, RequirementsReadRequirementConflictsResponse, RequirementsAcceptRequirementEvidenceData, RequirementsAcceptRequirementEvidenceResponse, RequirementsRejectRequirementEvidenceData, RequirementsRejectRequirementEvidenceResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AgentChatData, AgentChatResponse, AgentApproveData, AgentApproveResponse, AgentRejectData, AgentRejectResponse, AgentAgentConfigResponse, AgentRunsListRunsData, AgentRunsListRunsResponse, AgentRunsReadRunData, AgentRunsReadRunResponse, AgentRunsDeleteConversationData, AgentRunsDeleteConversationResponse, AgentRunsReadRunEventsData, AgentRunsReadRunEventsResponse, ApplicationsListApplicationsData, ApplicationsListApplicationsResponse, ApplicationsCreateApplicationData, ApplicationsCreateApplicationResponse, ApplicationsReadApplicationData, ApplicationsReadApplicationResponse, ApplicationsUpdateApplicationData, ApplicationsUpdateApplicationResponse, ApplicationsDeleteApplicationData, ApplicationsDeleteApplicationResponse, ApplicationsListApplicationTasksData, ApplicationsListApplicationTasksResponse, ApplicationsCreateApplicationTaskData, ApplicationsCreateApplicationTaskResponse, ApplicationTasksUpdateApplicationTaskData, ApplicationTasksUpdateApplicationTaskResponse, ApplicationTasksDeleteApplicationTaskData, ApplicationTasksDeleteApplicationTaskResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ProfileReadProfileMeResponse, ProfileUpdateProfileMeData, ProfileUpdateProfileMeResponse, ProgramsSearchProgramsData, ProgramsSearchProgramsResponse, ProgramsReadProgramData, ProgramsReadProgramResponse, ProgramsReadProgramRequirementsData, ProgramsReadProgramRequirementsResponse, ProgramsReadProgramEvidenceData, ProgramsReadProgramEvidenceResponse, ProgramsIngestProgramEvidenceData, ProgramsIngestProgramEvidenceResponse, RequirementsReadRequirementConflictsData, RequirementsReadRequirementConflictsResponse, RequirementsAcceptRequirementEvidenceData, RequirementsAcceptRequirementEvidenceResponse, RequirementsRejectRequirementEvidenceData, RequirementsRejectRequirementEvidenceResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AgentService {
     /**
@@ -116,6 +116,26 @@ export class AgentRunsService {
             url: '/api/v1/agent/runs/{run_id}',
             path: {
                 run_id: data.runId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Conversation
+     * @param data The data for the request.
+     * @param data.conversationId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteConversation(data: AgentRunsDeleteConversationData): CancelablePromise<AgentRunsDeleteConversationResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/agent/runs/conversations/{conversation_id}',
+            path: {
+                conversation_id: data.conversationId
             },
             errors: {
                 422: 'Validation Error'

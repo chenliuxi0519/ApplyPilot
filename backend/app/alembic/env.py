@@ -20,8 +20,10 @@ fileConfig(config.config_file_name)
 
 from app import models as user_models  # noqa: F401, E402
 from app.core.config import settings  # noqa: E402
+from app.harness import idempotency as tool_execution_models  # noqa: F401, E402
 from app.modules.agent_runs import models as agent_run_models  # noqa: F401, E402
 from app.modules.applications import models as application_models  # noqa: F401, E402
+from app.modules import preferences as preference_models  # noqa: F401, E402
 from app.modules.profiles import models as profile_models  # noqa: F401, E402
 from app.modules.programs import models as program_models  # noqa: F401, E402
 from sqlmodel import SQLModel  # noqa: E402

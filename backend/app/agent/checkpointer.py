@@ -10,6 +10,7 @@
 """
 
 import logging
+import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -43,6 +44,11 @@ CHECKPOINT_TABLES = (
 
 class CheckpointNotConfiguredError(RuntimeError):
     pass
+
+
+def checkpoint_thread_id(user_id: uuid.UUID, conversation_id: str) -> str:
+    """用户前缀是 checkpoint 的租户边界。"""
+    return f"{user_id}:{conversation_id}"
 
 
 def encryption_key() -> bytes:

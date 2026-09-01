@@ -1,8 +1,8 @@
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import ColumnElement, func
+from sqlalchemy import ColumnElement, CursorResult, func, update
 from sqlmodel import Session, col, select
 
 from app.agent.state import AgentStatus
@@ -68,6 +68,82 @@ def list_runs(
         ).all()
     )
     return rows, count
+
+
+def delete_conversation(
+    *, session: Session, user_id: uuid.UUID, conversation_id: str
+) -> int:
+    """删掉属于当前用户、这个会话下的全部运行记录。
+
+    事件表对 run_id 是 ON DELETE CASCADE，删运行会连带删掉它的事件，
+    这里不用再手动删一遍。conversation_id 一律按 user_id 过滤，
+    删不到别人的会话。
+    """
+    statement = (
+        select(AgentRun)
+        .where(col(AgentRun.user_id) == user_id)
+        .where(col(AgentRun.conversation_id) == conversation_id)
+    )
+    runs = list(session.exec(statement).all())
+    if not runs:
+        raise RunNotFoundError("会话不存在")
+    for run in runs:
+        session.delete(run)
+    session.commit()
+    return len(runs)
+
+
+def conversation_exists(
+    *, session: Session, user_id: uuid.UUID, conversation_id: str
+) -> bool:
+    statement = (
+        select(func.count())
+        .select_from(AgentRun)
+        .where(
+            col(AgentRun.user_id) == user_id,
+            col(AgentRun.conversation_id) == conversation_id,
+        )
+    )
+    return session.exec(statement).one() > 0
+
+
+def claim_waiting_run(
+    *, session: Session, user_id: uuid.UUID, run_id: uuid.UUID
+) -> bool:
+    """原子消费一次人工确认，避免两个实例同时恢复同一个 checkpoint。"""
+    now = get_datetime_utc()
+    # UPDATE 走的是 CursorResult，只有它带 rowcount；Session.execute 的
+    # 声明返回值是宽泛的 Result，所以这里显式收窄。
+    result = cast(
+        "CursorResult[Any]",
+        session.execute(
+            update(AgentRun)
+            .where(
+                col(AgentRun.id) == run_id,
+                col(AgentRun.user_id) == user_id,
+                col(AgentRun.status) == AgentStatus.WAITING_CONFIRMATION,
+            )
+            .values(status=AgentStatus.RUNNING, updated_at=now)
+        ),
+    )
+    session.commit()
+    return result.rowcount == 1
+
+
+def restore_waiting_run(
+    *, session: Session, user_id: uuid.UUID, run_id: uuid.UUID
+) -> None:
+    """恢复调用异常时释放 claim，让用户可以安全重试。"""
+    session.execute(
+        update(AgentRun)
+        .where(
+            col(AgentRun.id) == run_id,
+            col(AgentRun.user_id) == user_id,
+            col(AgentRun.status) == AgentStatus.RUNNING,
+        )
+        .values(status=AgentStatus.WAITING_CONFIRMATION, updated_at=get_datetime_utc())
+    )
+    session.commit()
 
 
 def get_run(*, session: Session, user_id: uuid.UUID, run_id: uuid.UUID) -> AgentRun:

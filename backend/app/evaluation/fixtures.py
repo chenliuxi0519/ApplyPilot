@@ -7,6 +7,7 @@ from sqlmodel import Session
 
 from app.evaluation.case import FixtureData
 from app.evaluation.gold_seed import ingest_gold_requirements
+from app.modules import preferences as preference_service
 from app.modules.applications import service as application_service
 from app.modules.applications.models import ApplicationStatus, TaskStatus, TaskType
 from app.modules.applications.schemas import (
@@ -197,6 +198,19 @@ def _empty(session: Session, user_id: uuid.UUID) -> FixtureData:
 @fixture("profile")
 def _profile(session: Session, user_id: uuid.UUID) -> FixtureData:
     _create_profile(session, user_id)
+    return FixtureData(user_id=user_id)
+
+
+@fixture("persistent_preference")
+def _persistent_preference(session: Session, user_id: uuid.UUID) -> FixtureData:
+    """槽位上已经有一条生效约束，用于覆盖、拒绝覆盖和声明错误这三类用例。"""
+    preference_service.remember_preference(
+        session=session,
+        user_id=user_id,
+        preference_key="campus_environment",
+        value="必须同时有湖和海",
+        raw_text="以后只考虑有湖有海的学校",
+    )
     return FixtureData(user_id=user_id)
 
 

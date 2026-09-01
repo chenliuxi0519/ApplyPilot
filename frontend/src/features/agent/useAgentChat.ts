@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { type AgentChatPublic, AgentRunsService, AgentService } from "@/client"
 import { type ChatMessage, runsToMessages, toAssistantMessage } from "./types"
@@ -26,8 +26,13 @@ export function useAgentChat() {
     queryFn: () => AgentRunsService.listRuns({ limit: 200 }),
   })
 
+  // 用户主动点过"新建对话"或者打开过某条历史对话之后，就不再自动跳回
+  // 最近一条——那会把用户刚清空的会话又拉回去，等于按钮白点了。
+  const skipAutoOpenRef = useRef(false)
+
   const openConversation = useCallback(
     (id: string) => {
+      skipAutoOpenRef.current = true
       const runs = (history.data?.data ?? []).filter(
         (run) => run.conversation_id === id,
       )
@@ -37,7 +42,14 @@ export function useAgentChat() {
     [history.data],
   )
 
+  const startNewConversation = useCallback(() => {
+    skipAutoOpenRef.current = true
+    setConversationId(null)
+    setMessages([])
+  }, [])
+
   useEffect(() => {
+    if (skipAutoOpenRef.current) return
     if (conversationId !== null || messages.length > 0) return
     const latest = history.data?.data.find((run) => run.conversation_id)
     if (latest?.conversation_id) openConversation(latest.conversation_id)
@@ -122,6 +134,26 @@ export function useAgentChat() {
     [decide],
   )
 
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      AgentRunsService.deleteConversation({ conversationId: id }),
+    onSuccess: (_response, deletedId) => {
+      // 删的正好是当前打开的这条，得清空面板，不然还显示着一段
+      // 已经被删掉的对话。
+      if (deletedId === conversationId) startNewConversation()
+      queryClient.invalidateQueries({ queryKey: ["agent-runs"] })
+    },
+    onError: fail,
+  })
+
+  const deleteConversation = useCallback(
+    (id: string) => {
+      if (remove.isPending) return
+      remove.mutate(id)
+    },
+    [remove],
+  )
+
   return {
     messages,
     ask,
@@ -132,5 +164,8 @@ export function useAgentChat() {
     historyLoading: history.isLoading,
     conversationId,
     openConversation,
+    startNewConversation,
+    deleteConversation,
+    isDeletingConversation: remove.isPending,
   }
 }

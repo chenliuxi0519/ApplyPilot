@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
+from math import ceil
 
 from app.evaluation.case import Category
 from app.evaluation.scoring import CaseOutcome, FailureKind
@@ -32,14 +33,26 @@ def _mean(values: Sequence[float]) -> float | None:
     return sum(values) / len(values)
 
 
+def _p95(values: Sequence[int]) -> int | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    return ordered[max(ceil(len(ordered) * 0.95) - 1, 0)]
+
+
 @dataclass(frozen=True)
 class CommonMetrics:
+    clean_pass_rate: Ratio
+    warning_case_rate: Ratio
+    unnecessary_tool_case_rate: Ratio
     business_effect_accuracy: Ratio
     tool_error_rate: Ratio
     unexpected_tool_error_rate: Ratio
     mean_steps: float | None
     mean_tool_calls: float | None
     mean_tool_latency_ms: float | None
+    p95_steps: int | None
+    p95_tool_calls: int | None
 
 
 @dataclass(frozen=True)
@@ -86,6 +99,17 @@ def _common(outcomes: Sequence[CaseOutcome]) -> CommonMetrics:
     latency = sum(outcome.metrics.total_tool_latency_ms for outcome in outcomes)
     ran = [outcome for outcome in outcomes if outcome.crash is None]
     return CommonMetrics(
+        clean_pass_rate=_ratio(
+            sum(1 for outcome in outcomes if outcome.passed and not outcome.warnings),
+            len(outcomes),
+        ),
+        warning_case_rate=_ratio(
+            sum(1 for outcome in outcomes if outcome.warnings), len(outcomes)
+        ),
+        unnecessary_tool_case_rate=_ratio(
+            sum(1 for outcome in outcomes if outcome.has(FailureKind.UNNECESSARY_TOOL)),
+            len(outcomes),
+        ),
         business_effect_accuracy=_ratio(
             sum(1 for result in effects if result.passed), len(effects)
         ),
@@ -98,6 +122,8 @@ def _common(outcomes: Sequence[CaseOutcome]) -> CommonMetrics:
         mean_steps=_mean([outcome.metrics.total_steps for outcome in ran]),
         mean_tool_calls=_mean([outcome.metrics.total_tool_calls for outcome in ran]),
         mean_tool_latency_ms=None if tool_calls == 0 else latency / tool_calls,
+        p95_steps=_p95([outcome.metrics.total_steps for outcome in ran]),
+        p95_tool_calls=_p95([outcome.metrics.total_tool_calls for outcome in ran]),
     )
 
 

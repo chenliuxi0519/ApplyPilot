@@ -7,7 +7,9 @@ AGENT_DIR = Path(__file__).resolve().parents[2] / "app" / "agent"
 FORBIDDEN_PREFIXES = ("app.modules", "app.tools", "app.api", "app.crud")
 
 
-COMPOSITION_ROOTS = frozenset({"cli.py"})
+# 组装根允许认识领域模块。cli.py 随旧引擎一起删除后，唯一的组装根是
+# app/api/routes/agent_chat.py，它不在 app/agent 下，所以这里暂时是空的。
+COMPOSITION_ROOTS: frozenset[str] = frozenset()
 
 
 PROVIDER_MODULES = ("anthropic",)
@@ -40,17 +42,6 @@ def test_agent_does_not_reach_into_the_business_domain() -> None:
     assert offenders == {}, f"app/agent must stay domain agnostic: {offenders}"
 
 
-def test_the_cli_adds_no_agent_logic() -> None:
-    source = (AGENT_DIR / "cli.py").read_text(encoding="utf-8")
-    for marker in (
-        "validate_tool_call",
-        "decide(",
-        "execute_tool",
-        "while True:\n        response",
-    ):
-        assert marker not in source, f"cli.py should not contain {marker!r}"
-
-
 def test_only_the_adapter_knows_the_provider() -> None:
     offenders = [
         path.name
@@ -66,7 +57,8 @@ def test_only_the_adapter_knows_the_provider() -> None:
     )
 
 
-def test_the_loop_does_not_parse_provider_content_blocks() -> None:
-    source = (AGENT_DIR / "loop.py").read_text(encoding="utf-8")
+def test_the_graph_does_not_parse_provider_content_blocks() -> None:
+    """编排层只认识消息的外层信封，内容块的形状归适配器管。"""
+    source = (AGENT_DIR / "graph.py").read_text(encoding="utf-8")
     for marker in ('"tool_use"', '"text"', '"content"', "block.type"):
-        assert marker not in source, f"loop.py should not know about {marker}"
+        assert marker not in source, f"graph.py should not know about {marker}"

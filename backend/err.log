@@ -1,0 +1,34 @@
+Using CPython 3.12.12
+Creating virtual environment at: D:\ApplyPilot\ApplyPilot\.venv
+   Building applypilot-backend @ file:///D:/ApplyPilot/ApplyPilot/backend
+   Building dkimpy==1.1.8
+Downloading pygments (1.2MiB)
+Downloading sqlalchemy (2.0MiB)
+Downloading ast-serialize (1.1MiB)
+Downloading mypy (10.6MiB)
+Downloading ruff (11.4MiB)
+Downloading zizmor (8.2MiB)
+Downloading prek (5.6MiB)
+Downloading ty (11.5MiB)
+Downloading psycopg-binary (3.4MiB)
+Downloading pydantic-core (2.0MiB)
+ Downloaded ast-serialize
+ Downloaded pydantic-core
+ Downloaded sqlalchemy
+ Downloaded pygments
+ Downloaded psycopg-binary
+ Downloaded prek
+ Downloaded zizmor
+      Built applypilot-backend @ file:///D:/ApplyPilot/ApplyPilot/backend
+ Downloaded ruff
+ Downloaded ty
+ Downloaded mypy
+      Built dkimpy==1.1.8
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 104 packages in 11.33s
+D:\ApplyPilot\ApplyPilot\backend\app\core\config.py:168: UserWarning: SECRET_KEY 仍使用默认值 "changethis"，请在部署前更换。
+  warnings.warn(message, stacklevel=1)
+D:\ApplyPilot\ApplyPilot\backend\app\core\config.py:168: UserWarning: FIRST_SUPERUSER_PASSWORD 仍使用默认值 "changethis"，请在部署前更换。
+  warnings.warn(message, stacklevel=1)

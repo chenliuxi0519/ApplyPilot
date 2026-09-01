@@ -533,6 +533,12 @@ export type AgentRunsReadRunData = {
 
 export type AgentRunsReadRunResponse = (AgentRunDetailPublic);
 
+export type AgentRunsDeleteConversationData = {
+    conversationId: string;
+};
+
+export type AgentRunsDeleteConversationResponse = (Message);
+
 export type AgentRunsReadRunEventsData = {
     runId: string;
 };

@@ -1,7 +1,7 @@
 """Context Engineering 与长短期记忆。
 
 A 短期指代 / B 跨重启 / C 跨 conversation 的长期 Profile /
-D 临时条件不污染长期记忆 / E 历史过长时压缩。
+D 临时条件不污染长期记忆 / E 显式长期偏好与覆盖 / F 历史过长时压缩。
 """
 
 import uuid
@@ -24,6 +24,7 @@ from app.agent.recorder import InMemoryRunRecorder
 from app.agent.trace import TraceEventType
 from app.context import build_business_context
 from app.core.config import settings
+from app.modules import preferences as preference_service
 from app.modules.applications.models import ApplicationStatus
 from app.modules.profiles import service as profile_service
 from app.modules.profiles.models import (
@@ -393,6 +394,53 @@ def test_only_an_explicit_tool_call_updates_the_profile(
 
     profile = profile_service.get_profile(session=db, user_id=user.id)
     assert profile is not None and profile.target_regions == ["新加坡"]
+
+
+def test_an_explicit_persistent_preference_reaches_a_new_conversation(
+    db: Session, checkpointer: Any
+) -> None:
+    user = create_random_user(db)
+    preference_service.remember_preference(
+        session=db,
+        user_id=user.id,
+        preference_key="campus_environment",
+        value="学校必须有湖，海不是必要条件",
+        raw_text="以后只考虑有湖的学校，海可以不要",
+    )
+
+    model = RecordingModel([_answer("我会按你的长期偏好推荐。")])
+    _run(db, user, model, f"c-{uuid.uuid4().hex}", "推荐项目", checkpointer)
+
+    assert "[PERSISTENT_USER_PREFERENCES]" in model.systems[0]
+    assert "campus_environment: 学校必须有湖，海不是必要条件" in model.systems[0]
+    assert "有湖有海" not in model.systems[0]
+
+
+def test_only_the_latest_preference_version_enters_context(
+    db: Session, checkpointer: Any
+) -> None:
+    user = create_random_user(db)
+    preference_service.remember_preference(
+        session=db,
+        user_id=user.id,
+        preference_key="campus_environment",
+        value="必须同时有湖和海",
+        raw_text="以后只考虑有湖有海的学校",
+    )
+    preference_service.remember_preference(
+        session=db,
+        user_id=user.id,
+        preference_key="campus_environment",
+        value="必须有湖；海不是必要条件",
+        raw_text="有湖就行，海可以不要",
+        change_kind=preference_service.PreferenceChange.REPLACE,
+    )
+
+    model = RecordingModel([_answer("好的。")])
+    _run(db, user, model, f"c-{uuid.uuid4().hex}", "推荐项目", checkpointer)
+
+    assert "campus_environment: 必须有湖；海不是必要条件" in model.systems[0]
+    assert "必须同时有湖和海" not in model.systems[0]
 
 
 # --------------------------------------------------------------------------

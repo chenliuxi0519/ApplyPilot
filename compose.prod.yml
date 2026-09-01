@@ -1,0 +1,8 @@
+services:
+  # 直接用 IP:端口访问，不接 Traefik/域名/HTTPS。
+  # 首次使用前先执行一次：docker network create traefik-public
+  # 用法：docker compose -f compose.yml -f compose.prod.yml up -d --build db prestart backend
+
+  backend:
+    ports:
+      - "8000:8000"

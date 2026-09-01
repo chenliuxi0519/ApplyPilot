@@ -31,6 +31,7 @@ class EffectKind(StrEnum):
     APPLICATION_STATUS = "application_status"
     TASK_STATUS = "task_status"
     PROFILE_FIELD = "profile_field"
+    PREFERENCE_VALUE = "preference_value"
 
 
 @dataclass(frozen=True)

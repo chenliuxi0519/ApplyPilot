@@ -1,8 +1,4 @@
-"""graph 引擎走完整 HTTP 链路，响应结构必须和 loop 引擎一致。
-
-前端只认 /agent/chat 和 /agent/runs/{id}/approve|reject 这套协议，
-换引擎不能让它感知到任何变化。
-"""
+"""LangGraph 引擎的完整 HTTP 链路。"""
 
 import uuid
 from collections.abc import Generator
@@ -35,7 +31,6 @@ TEST_KEY = "applypilot-test-key-32-bytes!!!!"
 
 @pytest.fixture(autouse=True)
 def graph_engine(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
-    monkeypatch.setattr(settings, "AGENT_ENGINE", "graph")
     monkeypatch.setattr(settings, "CHECKPOINT_ENCRYPTION_KEY", TEST_KEY)
     with open_checkpointer() as saver:
         saver.setup()
@@ -101,9 +96,7 @@ def test_a_plain_answer_comes_back_with_a_run_id(
     assert body["confirmation"] is None
 
 
-def test_the_response_shape_matches_the_loop_engine(
-    client: TestClient, db: Session
-) -> None:
+def test_the_response_shape_is_stable(client: TestClient, db: Session) -> None:
     user, _ = _ready_application(db)
     _script(_answer("好的。"))
 
@@ -272,7 +265,7 @@ def test_a_confirmation_can_only_be_spent_once(client: TestClient, db: Session) 
 def test_the_run_history_records_the_graph_engine(
     client: TestClient, db: Session
 ) -> None:
-    """恢复要按运行自己的引擎路由，所以这一列必须写对。"""
+    """运行历史明确记录唯一的 LangGraph 引擎。"""
     from app.modules.agent_runs.models import AgentRun
 
     user, _ = _ready_application(db)
@@ -284,3 +277,29 @@ def test_the_run_history_records_the_graph_engine(
     run: Any = db.get(AgentRun, uuid.UUID(body["run_id"]))
     assert run is not None
     assert run.engine == "graph"
+
+
+def test_deleting_a_conversation_removes_its_checkpoint(
+    client: TestClient, db: Session
+) -> None:
+    user, _ = _ready_application(db)
+    headers = _headers(client, db, user)
+    _script(_answer("好的。"))
+    body = client.post(CHAT_URL, headers=headers, json={"message": "你好"}).json()
+    config = {
+        "configurable": {
+            "thread_id": f"{user.id}:{body['conversation_id']}",
+            "checkpoint_ns": "",
+        }
+    }
+    with open_checkpointer() as saver:
+        assert saver.get_tuple(config) is not None
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/agent/runs/conversations/{body['conversation_id']}",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    with open_checkpointer() as saver:
+        assert saver.get_tuple(config) is None

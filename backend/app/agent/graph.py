@@ -53,6 +53,7 @@ from app.harness import (
     ToolRegistry,
     ToolResult,
     UserRejectedError,
+    build_key,
     decide,
     error_result,
     execute_tool,
@@ -500,7 +501,15 @@ def execute_tools(
             decision = decide(context=execution, call=call)
             outcome = decision.outcome
             if decision.outcome is PolicyOutcome.ALLOW:
-                result = execute_tool(call=call, ctx=tool_ctx)
+                # 键取自 checkpoint 里的 state，崩溃重放时不变，写工具因此
+                # 不会被执行第二遍。
+                result = execute_tool(
+                    call=call,
+                    ctx=tool_ctx,
+                    idempotency_key=build_key(
+                        run_id=state["run_id"], call_id=model_call.id
+                    ),
+                )
             else:
                 result = error_result(
                     call_id=model_call.id,

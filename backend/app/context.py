@@ -1,9 +1,15 @@
 """把数据库里的业务事实整理成模型能读的上下文块。
 
-这就是本项目的长期记忆：不建通用 memory 表，直接用已有的 UserProfile 和
-Application——它们本来就是"用户稳定事实"的权威来源。
+长期记忆分两半，因为它们的更新语义不一样：
 
-只放当前决策用得上的字段，不把整库倒给模型。
+* 有唯一真值、可被外部校验的**事实**（GPA、语言成绩、申请状态）直接复用
+  UserProfile 和 Application，它们本来就是权威来源。事实变了叫修正，旧值
+  没有保留价值。
+* 没有真值、只能由用户表态的**偏好**（校园环境、学校类型）放在 UserPreference。
+  偏好变了叫改主意，旧值必须留着，否则没法解释"为什么这次推荐和上次不同"。
+
+两者都只取当前决策用得上的部分，不把整库倒给模型。会话内的短期状态由
+LangGraph checkpoint 负责，不在这里。
 """
 
 import uuid
@@ -11,6 +17,7 @@ from decimal import Decimal
 
 from sqlmodel import Session
 
+from app.modules import preferences as preference_service
 from app.modules.applications import service as application_service
 from app.modules.applications.models import Application
 from app.modules.profiles import service as profile_service
@@ -19,6 +26,8 @@ from app.modules.programs import service as program_service
 
 # 申请太多时只带最近要交的几个，避免上下文被清单撑爆。
 MAX_APPLICATIONS = 5
+# 生效偏好按槽位去重后本来就不多；这个上限只是兜底，正常不会触发。
+MAX_PREFERENCES = 20
 MAX_SUMMARY_CHARS = 200
 
 
@@ -96,6 +105,25 @@ def build_business_context(*, session: Session, user_id: uuid.UUID) -> tuple[str
     profile_fields = len(lines)
     body = "\n".join(lines) if lines else "（用户尚未填写个人档案）"
     blocks.append(f"[USER_PROFILE]\n{body}\n[/USER_PROFILE]")
+
+    # 只注入 active 版本。被覆盖和被撤销的行留在库里是为了审计，不该再影响决策——
+    # 把它们一起塞进上下文，模型就会看到互相打架的约束。
+    preferences = preference_service.list_active_preferences(
+        session=session, user_id=user_id, limit=MAX_PREFERENCES
+    )
+    if preferences:
+        preference_rows = "\n".join(
+            f"- {row.preference_key}: {row.value}" for row in preferences
+        )
+    else:
+        preference_rows = "（用户尚未保存跨会话偏好）"
+    blocks.append(
+        "[PERSISTENT_USER_PREFERENCES]\n"
+        f"{preference_rows}\n"
+        "以上是用户明确要求长期生效的偏好，每个槽位只列当前生效的版本。"
+        "与本轮对话中的临时条件冲突时，本轮条件只影响这一次回答，不改动这里。\n"
+        "[/PERSISTENT_USER_PREFERENCES]"
+    )
 
     applications, _ = application_service.list_applications(
         session=session, user_id=user_id, limit=MAX_APPLICATIONS

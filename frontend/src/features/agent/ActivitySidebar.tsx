@@ -1,4 +1,11 @@
-import { CheckCircle2, CircleDashed, PauseCircle, XCircle } from "lucide-react"
+import {
+  CheckCircle2,
+  CircleDashed,
+  PauseCircle,
+  Trash2,
+  XCircle,
+} from "lucide-react"
+import type { MouseEvent } from "react"
 
 import type { AgentRunPublic } from "@/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -8,6 +15,7 @@ interface ActivitySidebarProps {
   loading: boolean
   activeConversationId: string | null
   onOpen: (conversationId: string) => void
+  onDelete: (conversationId: string) => void
 }
 
 export function ActivitySidebar({
@@ -15,6 +23,7 @@ export function ActivitySidebar({
   loading,
   activeConversationId,
   onOpen,
+  onDelete,
 }: ActivitySidebarProps) {
   const conversations = runs
     .filter(
@@ -49,6 +58,7 @@ export function ActivitySidebar({
               run={run}
               active={run.conversation_id === activeConversationId}
               onOpen={onOpen}
+              onDelete={onDelete}
             />
           ))
         )}
@@ -88,33 +98,57 @@ function RunRow({
   run,
   active,
   onOpen,
+  onDelete,
 }: {
   run: AgentRunPublic
   active: boolean
   onOpen: (conversationId: string) => void
+  onDelete: (conversationId: string) => void
 }) {
   const meta = STATUS_META[run.status] ?? STATUS_META.running
   const Icon = meta.icon
 
+  const handleDelete = (event: MouseEvent) => {
+    event.stopPropagation()
+    if (!run.conversation_id) return
+    if (window.confirm("删除这段对话？删除后无法恢复。")) {
+      onDelete(run.conversation_id)
+    }
+  }
+
   return (
-    <button
-      type="button"
-      disabled={!run.conversation_id}
-      onClick={() => run.conversation_id && onOpen(run.conversation_id)}
-      className={`mb-[3px] w-full rounded-[7px] border px-2.5 py-[9px] text-left text-xs hover:bg-[var(--surface-raised)] disabled:cursor-default ${active ? "border-[var(--border)] bg-[var(--surface-raised)]" : "border-transparent"}`}
+    <div
+      className={`group relative mb-[3px] rounded-[7px] border ${active ? "border-[var(--border)] bg-[var(--surface-raised)]" : "border-transparent"}`}
     >
-      <div className="flex items-center gap-1.5">
-        <Icon className={`size-3.5 shrink-0 ${meta.className}`} />
-        <span className="font-medium">{meta.label}</span>
-      </div>
-      <p className="mt-1 truncate text-muted-foreground">
-        {run.user_message ??
-          run.final_answer ??
-          `调用了 ${run.tool_call_count} 个工具`}
-      </p>
-      <p className="mt-0.5 font-mono text-[10px] text-[var(--text-muted)]">
-        {new Date(run.started_at).toLocaleString("zh-CN")}
-      </p>
-    </button>
+      <button
+        type="button"
+        disabled={!run.conversation_id}
+        onClick={() => run.conversation_id && onOpen(run.conversation_id)}
+        className="w-full rounded-[7px] py-[9px] pr-8 pl-2.5 text-left text-xs hover:bg-[var(--surface-raised)] disabled:cursor-default"
+      >
+        <div className="flex items-center gap-1.5">
+          <Icon className={`size-3.5 shrink-0 ${meta.className}`} />
+          <span className="font-medium">{meta.label}</span>
+        </div>
+        <p className="mt-1 truncate text-muted-foreground">
+          {run.user_message ??
+            run.final_answer ??
+            `调用了 ${run.tool_call_count} 个工具`}
+        </p>
+        <p className="mt-0.5 font-mono text-[10px] text-[var(--text-muted)]">
+          {new Date(run.started_at).toLocaleString("zh-CN")}
+        </p>
+      </button>
+      {run.conversation_id ? (
+        <button
+          type="button"
+          onClick={handleDelete}
+          aria-label="删除对话"
+          className="absolute top-2 right-1.5 rounded p-1 text-[var(--text-muted)] opacity-0 hover:bg-[var(--surface)] hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      ) : null}
+    </div>
   )
 }

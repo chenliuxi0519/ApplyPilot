@@ -1,7 +1,11 @@
 import json
 from collections.abc import Sequence
+from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 
+from app.agent.prompt import SYSTEM_PROMPT
+from app.core.config import settings
 from app.evaluation.aggregate import (
     DeterministicMetrics,
     Ratio,
@@ -34,6 +38,9 @@ def _deterministic_body(metrics: DeterministicMetrics) -> list[str]:
         f"失败：{metrics.cases - metrics.passed}",
         "",
         _line("用例通过率", metrics.case_pass_rate),
+        _line("无警告通过率", common.clean_pass_rate),
+        _line("警告用例率", common.warning_case_rate),
+        _line("冗余工具用例率", common.unnecessary_tool_case_rate),
         _line("工具执行准确率", metrics.harness_execution_accuracy),
         _line("权限判断准确率", metrics.policy_decision_accuracy),
         _line("人工确认行为准确率", metrics.hitl_behavior_accuracy),
@@ -47,6 +54,8 @@ def _deterministic_body(metrics: DeterministicMetrics) -> list[str]:
         _mean("平均步骤数", common.mean_steps),
         _mean("平均工具调用数", common.mean_tool_calls),
         _mean("平均工具耗时", common.mean_tool_latency_ms, "毫秒"),
+        _mean("P95 步骤数", common.p95_steps),
+        _mean("P95 工具调用数", common.p95_tool_calls),
         "",
         "耗时只统计工具执行；确定性模式不调用真实模型。",
     ]
@@ -62,6 +71,9 @@ def _real_body(metrics: RealMetrics) -> list[str]:
         f"失败：{metrics.cases - metrics.passed}",
         "",
         _line("任务成功率", metrics.task_success_rate),
+        _line("无警告通过率", common.clean_pass_rate),
+        _line("警告用例率", common.warning_case_rate),
+        _line("冗余工具用例率", common.unnecessary_tool_case_rate),
         _line("工具选择准确率", metrics.tool_selection_accuracy),
         _line("禁用工具调用率", metrics.forbidden_tool_rate),
         _line("工具顺序准确率", metrics.tool_sequence_accuracy),
@@ -73,6 +85,8 @@ def _real_body(metrics: RealMetrics) -> list[str]:
         _mean("平均步骤数", common.mean_steps),
         _mean("平均工具调用数", common.mean_tool_calls),
         _mean("平均工具耗时", common.mean_tool_latency_ms, "毫秒"),
+        _mean("P95 步骤数", common.p95_steps),
+        _mean("P95 工具调用数", common.p95_tool_calls),
     ]
 
 
@@ -154,8 +168,28 @@ def render(outcomes: Sequence[CaseOutcome], *, mode: Mode) -> str:
 
 
 def to_json(outcomes: Sequence[CaseOutcome], *, mode: Mode) -> dict[str, object]:
+    common = (
+        deterministic_metrics(outcomes).common
+        if mode is Mode.DETERMINISTIC
+        else real_metrics(outcomes).common
+    )
     return {
         "mode": mode.value,
+        "metadata": {
+            "runtime": "langgraph",
+            "model": "scripted" if mode is Mode.DETERMINISTIC else settings.AGENT_MODEL,
+            "prompt_hash": sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:12],
+            "generated_at": datetime.now(UTC).isoformat(),
+        },
+        "summary": {
+            "clean_pass_rate": common.clean_pass_rate.value,
+            "warning_case_rate": common.warning_case_rate.value,
+            "unnecessary_tool_case_rate": common.unnecessary_tool_case_rate.value,
+            "mean_steps": common.mean_steps,
+            "mean_tool_calls": common.mean_tool_calls,
+            "p95_steps": common.p95_steps,
+            "p95_tool_calls": common.p95_tool_calls,
+        },
         "cases": [
             {
                 "id": outcome.case_id,

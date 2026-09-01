@@ -1,5 +1,4 @@
 from app.agent.budget import Budget
-from app.agent.loop import AgentLoop, ResumeNotPendingError, RunAlreadyStartedError
 from app.agent.model import (
     ModelClient,
     ModelResponse,
@@ -22,7 +21,6 @@ from app.agent.trace import TraceEvent, TraceEventType
 
 __all__ = [
     "SYSTEM_PROMPT",
-    "AgentLoop",
     "AgentState",
     "AgentStatus",
     "Budget",
@@ -34,8 +32,6 @@ __all__ = [
     "NullRunRecorder",
     "PendingBatch",
     "PendingConfirmation",
-    "ResumeNotPendingError",
-    "RunAlreadyStartedError",
     "RunRecorder",
     "TraceEvent",
     "TraceEventType",

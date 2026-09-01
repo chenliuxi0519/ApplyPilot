@@ -5,6 +5,11 @@ from app.tools.applications import (
     UPDATE_APPLICATION_STATUS,
     UPDATE_APPLICATION_TASK,
 )
+from app.tools.preferences import (
+    FORGET_USER_PREFERENCE,
+    LIST_USER_PREFERENCES,
+    REMEMBER_USER_PREFERENCE,
+)
 from app.tools.profile import GET_USER_PROFILE, UPDATE_USER_PROFILE
 from app.tools.programs import (
     COMPARE_PROGRAMS,
@@ -16,6 +21,9 @@ from app.tools.research import RESEARCH_PROGRAM_REQUIREMENTS
 BUSINESS_TOOLS: tuple[ToolDefinition, ...] = (
     GET_USER_PROFILE,
     UPDATE_USER_PROFILE,
+    LIST_USER_PREFERENCES,
+    REMEMBER_USER_PREFERENCE,
+    FORGET_USER_PREFERENCE,
     SEARCH_PROGRAMS,
     GET_PROGRAM_REQUIREMENTS,
     RESEARCH_PROGRAM_REQUIREMENTS,

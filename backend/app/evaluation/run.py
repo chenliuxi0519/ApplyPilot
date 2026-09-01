@@ -5,8 +5,10 @@ from pathlib import Path
 from app.core.config import settings
 from app.core.db import engine
 from app.evaluation.case import Category
+from app.evaluation.compare import ReportFormatError, compare, load_report
+from app.evaluation.compare import render as render_comparison
 from app.evaluation.dataset import DATASET, cases
-from app.evaluation.report import render, write_json
+from app.evaluation.report import render, to_json, write_json
 from app.evaluation.runner import Mode, run_cases
 
 EXIT_OK = 0
@@ -34,6 +36,17 @@ def _parser() -> argparse.ArgumentParser:
         help="保留评测创建的临时用户，便于人工检查",
     )
     parser.add_argument("--fail-fast", action="store_true")
+    parser.add_argument(
+        "--require-clean",
+        action="store_true",
+        help="任何非致命警告也视为评测失败，适合迭代回归门禁",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        dest="baseline_path",
+        help="上一次运行导出的 JSON 报告；逐用例对照，出现回归即判失败",
+    )
     parser.add_argument("--list", action="store_true", help="打印评测数据集后退出")
     return parser
 
@@ -77,7 +90,25 @@ def main(argv: list[str] | None = None) -> int:
         write_json(outcomes, mode=mode, path=args.json_path)
         print(f"\n结果已写入 {args.json_path}")
 
-    return EXIT_OK if all(outcome.passed for outcome in outcomes) else EXIT_FAILED
+    passed = all(outcome.passed for outcome in outcomes)
+    clean = all(not outcome.warnings for outcome in outcomes)
+    regressed = False
+
+    if args.baseline_path is not None:
+        try:
+            comparison = compare(
+                baseline=load_report(args.baseline_path),
+                current=to_json(outcomes, mode=mode),
+            )
+        except ReportFormatError as error:
+            print(f"\n无法与基线对照：{error}")
+            return EXIT_UNAVAILABLE
+        print("\n" + render_comparison(comparison))
+        # 有回归就必须失败，哪怕这次的绝对通过数比上次还高。
+        regressed = comparison.has_regression
+
+    ok = passed and (clean or not args.require_clean) and not regressed
+    return EXIT_OK if ok else EXIT_FAILED
 
 
 if __name__ == "__main__":

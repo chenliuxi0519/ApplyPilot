@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { PanelRight } from "lucide-react"
+import { PanelRight, SquarePen } from "lucide-react"
 import { useState } from "react"
 
 import { AgentService } from "@/client"
@@ -23,6 +23,8 @@ export function AgentPage() {
     historyLoading,
     conversationId,
     openConversation,
+    startNewConversation,
+    deleteConversation,
   } = useAgentChat()
   const [draft, setDraft] = useState<{ text: string; key: number }>()
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
@@ -44,6 +46,7 @@ export function AgentPage() {
           loading={historyLoading}
           activeConversationId={conversationId}
           onOpen={openConversation}
+          onDelete={deleteConversation}
         />
       </div>
 
@@ -54,15 +57,28 @@ export function AgentPage() {
             <span className="size-[7px] animate-pulse rounded-full bg-[var(--success)] shadow-[0_0_10px_var(--success)]" />
             <span className="text-sm font-medium">ApplyPilot 智能助手</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="xl:hidden"
-            onClick={() => setWorkspaceOpen((open) => !open)}
-          >
-            <PanelRight className="size-4" />
-            工作区
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={
+                isBusy || (conversationId === null && messages.length === 0)
+              }
+              onClick={startNewConversation}
+            >
+              <SquarePen className="size-4" />
+              新对话
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="xl:hidden"
+              onClick={() => setWorkspaceOpen((open) => !open)}
+            >
+              <PanelRight className="size-4" />
+              工作区
+            </Button>
+          </div>
         </header>
 
         {unconfigured ? (

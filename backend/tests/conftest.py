@@ -11,6 +11,7 @@ from app.main import app
 from app.models import User
 from app.modules.agent_runs.models import AgentRun, AgentRunEvent
 from app.modules.applications.models import Application, ApplicationTask
+from app.modules.preferences import UserPreference
 from app.modules.profiles.models import ProfileFieldHistory, UserProfile
 from app.modules.programs.models import (
     Program,
@@ -61,6 +62,7 @@ def db() -> Generator[Session]:
         session.exec(delete(University))
         session.exec(delete(ProfileFieldHistory))
         session.exec(delete(UserProfile))
+        session.exec(delete(UserPreference))
         statement = delete(User)
         session.exec(statement)
         session.commit()
