@@ -18,7 +18,7 @@ dependencies = [
     "pydantic-settings<3.0.0,>=2.2.1",
     "sentry-sdk[fastapi]>=2.66.1,<3.0.0",
     "pyjwt<3.0.0,>=2.13.0",
-    "pwdlib[argon2,bcrypt]>=0.3.0",
+    "pwdlib[argon2,bcrypt]>=0.3.1",
     "anthropic>=0.69.0,<1.0.0",
     # LangGraph 与 checkpointer 精确锁版本：checkpointer 自带内部表的迁移列表，
     # 版本一变表结构就可能变，升级必须是一次显式、可验证的动作。
